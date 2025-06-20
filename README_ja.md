@@ -121,6 +121,32 @@ python train_withdensecrfloss.py \
     --sigma-xy 100
 ```
 
+### 画像サイズ別の推奨設定
+
+異なる画像サイズに対する最適なパラメータ設定：
+
+| 画像サイズ | crop_size | base_size | batch_size | rloss_scale | sigma_xy | sigma_rgb | 用途 |
+|-----------|-----------|-----------|------------|-------------|----------|-----------|------|
+| 40×40     | 64        | 64        | 32         | 0.25        | 20       | 10        | 小画像・高速処理 |
+| 80×80     | 128       | 128       | 16         | 0.5         | 40       | 15        | 中画像・バランス |
+| 256×256   | 256       | 256       | 8          | 0.75        | 60       | 15        | 高解像度 |
+| 513×513   | 513       | 513       | 4          | 1.0         | 80       | 15        | 標準・最高品質 |
+
+#### 小画像（40×40）用の訓練例
+```bash
+python train_withdensecrfloss.py \
+    --backbone mobilenet \
+    --crop-size 64 \
+    --base-size 64 \
+    --batch-size 32 \
+    --lr 0.01 \
+    --epochs 80 \
+    --densecrfloss 2e-9 \
+    --rloss-scale 0.25 \
+    --sigma-rgb 10 \
+    --sigma-xy 20
+```
+
 ### 2段階訓練プロセス
 
 1. **第1段階**: 部分交差エントロピー損失のみで訓練
@@ -130,12 +156,43 @@ python train_withdensecrfloss.py \
    - mIOUが~62.3%に向上
 
 ### 推論
+
+#### 標準画像での推論
 ```bash
 python inference.py \
     --backbone mobilenet \
     --checkpoint CHECKPOINT_PATH \
     --image_path IMAGE_PATH \
-    --output_directory OUTPUT_DIR
+    --output_directory OUTPUT_DIR \
+    --crop_size 513
+```
+
+#### 小画像（40×40）での推論
+```bash
+python inference.py \
+    --backbone mobilenet \
+    --checkpoint CHECKPOINT_PATH \
+    --image_path SMALL_IMAGE_PATH \
+    --output_directory OUTPUT_DIR \
+    --crop_size 64 \
+    --rloss-weight 2e-9 \
+    --rloss-scale 0.25 \
+    --sigma-rgb 10 \
+    --sigma-xy 20
+```
+
+#### DenseCRF損失を含む推論
+```bash
+python inference.py \
+    --backbone mobilenet \
+    --checkpoint CHECKPOINT_PATH \
+    --image_path IMAGE_PATH \
+    --output_directory OUTPUT_DIR \
+    --crop_size 513 \
+    --rloss-weight 2e-9 \
+    --rloss-scale 0.5 \
+    --sigma-rgb 15 \
+    --sigma-xy 80
 ```
 
 ## 性能結果
@@ -198,6 +255,107 @@ python inference.py \
   </tr>
 </table>
 
+## 新しい画像とスクリブルラベルでの使用方法
+
+### 1. 新しい画像での推論
+
+学習済みモデルを使用して新しい画像をセグメンテーションする場合：
+
+```bash
+cd pytorch-deeplab_v3_plus
+
+# 標準サイズ画像の場合
+python inference.py \
+    --backbone mobilenet \
+    --checkpoint /path/to/trained_model.pth.tar \
+    --image_path /path/to/new_image.jpg \
+    --output_directory /path/to/output/ \
+    --crop_size 513 \
+    --n_class 21
+
+# 小画像（40×40）の場合
+python inference.py \
+    --backbone mobilenet \
+    --checkpoint /path/to/trained_model.pth.tar \
+    --image_path /path/to/small_image.jpg \
+    --output_directory /path/to/output/ \
+    --crop_size 64 \
+    --n_class 21
+```
+
+### 2. 新しいスクリブルデータでのファインチューニング
+
+#### データセット準備
+新しいスクリブルアノテーションデータセットの構造：
+```
+/data/datasets/your_dataset/
+├── JPEGImages/          # RGB画像
+├── SegmentationClassAug/ # グラウンドトゥルース（オプション）
+└── pascal_2012_scribble/ # スクリブルアノテーション
+```
+
+#### mypath.pyの更新
+```python
+# pytorch-deeplab_v3_plus/mypath.py に追加
+elif dataset == 'your_dataset':
+    return '/data/datasets/your_dataset/'
+```
+
+#### ファインチューニング実行
+```bash
+# 事前訓練済みモデルからファインチューニング
+python train_withdensecrfloss.py \
+    --backbone mobilenet \
+    --dataset your_dataset \
+    --resume /path/to/pretrained_model.pth.tar \
+    --ft \
+    --lr 0.001 \
+    --epochs 30 \
+    --batch-size 8 \
+    --crop-size 513 \
+    --base-size 513 \
+    --densecrfloss 2e-9 \
+    --rloss-scale 0.5
+
+# 小画像データセットの場合
+python train_withdensecrfloss.py \
+    --backbone mobilenet \
+    --dataset your_dataset \
+    --resume /path/to/pretrained_model.pth.tar \
+    --ft \
+    --lr 0.001 \
+    --epochs 50 \
+    --batch-size 32 \
+    --crop-size 64 \
+    --base-size 64 \
+    --densecrfloss 2e-9 \
+    --rloss-scale 0.25
+```
+
+### 3. スクリブルアノテーション形式
+
+スクリブルラベルは以下の形式で作成してください：
+- **ファイル形式**: PNG（8bit、パレットモード）
+- **ピクセル値**: 
+  - 0: 背景
+  - 1-20: PASCAL VOC2012クラス（person, car, etc.）
+  - 255: 無視領域（ignore region）
+- **スクリブル**: 各オブジェクトに対して数ピクセルの線や点でアノテーション
+
+### 4. カスタムデータセット用のデータローダー作成
+
+新しいデータセット用のデータローダーを作成する場合：
+
+```python
+# dataloaders/datasets/your_dataset.py
+from dataloaders.datasets import pascal
+from mypath import Path
+
+class YourDatasetSegmentation(pascal.VOCSegmentation):
+    def __init__(self, args, root=Path.db_root_dir('your_dataset'), **kwargs):
+        super(YourDatasetSegmentation, self).__init__(args, root, **kwargs)
+```
+
 ## トラブルシューティング
 
 ### よくある問題
@@ -215,6 +373,7 @@ python inference.py \
 3. **CUDA out of memory**
    - バッチサイズを減らす: `--batch-size 8`
    - スケールファクターを小さくする: `--rloss-scale 0.25`
+   - 画像サイズを小さくする: `--crop-size 256`
 
 4. **bilateral filtering import エラー**
    ```bash
@@ -224,6 +383,16 @@ python inference.py \
    python setup.py build_ext --inplace
    python setup.py install
    ```
+
+5. **小画像での性能低下**
+   - 適切なcrop_sizeを使用（40×40画像なら64推奨）
+   - rloss_scaleを小さく設定（0.25推奨）
+   - sigma_xy, sigma_rgbを画像サイズに合わせて調整
+
+6. **新しいデータセットでの学習が進まない**
+   - 学習率を調整（小さいデータセットでは0.001推奨）
+   - エポック数を増やす（50-100エポック）
+   - 事前訓練済みモデルからファインチューニングを使用
 
 5. **numpy互換性エラー**
    - 新しいnumpyバージョンでは`get_numpy_include()`が廃止されています
