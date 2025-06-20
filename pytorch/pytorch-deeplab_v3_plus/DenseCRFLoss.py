@@ -5,7 +5,8 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
 import sys
-sys.path.append("../wrapper/bilateralfilter/build/lib.linux-x86_64-3.6")
+sys.path.append("../wrapper/bilateralfilter/build/lib.linux-x86_64-3.8")
+sys.path.append("../wrapper/bilateralfilter/")
 from bilateralfilter import bilateralfilter, bilateralfilter_batch
 from dataloaders.custom_transforms import denormalizeimage
 import time

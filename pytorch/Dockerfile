@@ -1,35 +1,29 @@
-# base image Nvidia PyTorch image
-FROM nvcr.io/nvidia/pytorch:19.01-py3
+# Updated base image for modern PyTorch with CUDA support
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
 
-# install dependencies
-RUN apt-get update
-#RUN apt-get install sudo
-RUN pip install --upgrade cython
-RUN pip install \
-  astroid==2.2.5 \
-  cycler==0.10.0 \
-  Cython>=0.29.13 \
-  isort==4.3.21 \
-  kiwisolver==1.1.0 \
-  lazy-object-proxy==1.4.2 \
-  matplotlib==3.1.1 \
-  mccabe==0.6.1 \
-  numpy==1.17.1 \
-  Pillow==6.1.0 \
-  protobuf==3.9.1 \
-  pycocotools==2.0 \
-  pylint==2.3.1 \
-  pyparsing==2.4.2 \
-  python-dateutil==2.8.0 \
-  scipy==1.3.1 \
-  six==1.12.0 \
-  tensorboardX==1.8 \
-  torch==1.2.0 \
-  torchvision==0.4.0 \
-  tqdm==4.35.0 \
-  typed-ast==1.4.0 \
-  wrapt>=1.10.11
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    swig \
+    build-essential \
+    libomp-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# install python module for Bilateral filtering
-RUN apt-get install swig -y
+# Install Python dependencies
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy source code
+COPY . /workspace/
+
+# Build bilateral filtering extension
+WORKDIR /workspace/wrapper/bilateralfilter
+RUN swig -python -c++ bilateralfilter.i && \
+    python setup.py build_ext --inplace && \
+    python setup.py install
+
+# Return to main directory
+WORKDIR /workspace
 

@@ -105,5 +105,7 @@ In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), Salt Lake 
 Hoel Kervadec, Jose Dolz, Meng Tang, Eric Granger, Yuri Boykov, Ismail Ben Ayed</br>
 In	International	conference on	Medical	Imaging	with	Deep	Learning	(MIDL),	Amsterdam,	Netherlands,	July	2018.</br>
 
-### Pytorch and Tensorflow
+### PyTorch and TensorFlow
 The original implementation used for the published articles is in Caffe. We release a PyTorch implementation, see <a href="pytorch/">pytorch</a>. A tensorflow version is under development. We will also try other state-of-the-art network backbones with regularized losses and include in this repository.
+
+**日本語ドキュメント**: 詳細な日本語での説明とセットアップガイドは [README_ja.md](README_ja.md) をご覧ください。
