@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  rloss-a100:
+    build:
+      context: .
+      dockerfile: Dockerfile.a100
+      args:
+        CUDA_VERSION: 11.8
+        PYTORCH_VERSION: 2.0.1
+        UBUNTU_VERSION: 22.04
+    image: rloss:a100-ubuntu22.04
+    container_name: rloss-container
+    
+    # GPU configuration for A100
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    
+    # Environment variables for A100 optimization
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=all
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+      - CUDA_LAUNCH_BLOCKING=0
+      - TORCH_USE_CUDA_DSA=1
+      - PYTHONUNBUFFERED=1
+    
+    # Volume mounts
+    volumes:
+      - .:/workspace
+      - /data/datasets:/data/datasets
+      - ./results:/workspace/results
+      - ./logs:/workspace/logs
+    
+    # Working directory
+    working_dir: /workspace
+    
+    # Network configuration
+    ports:
+      - "8888:8888"  # Jupyter
+      - "6006:6006"  # TensorBoard
+      - "8080:8080"  # Additional services
+    
+    # Resource limits for A100
+    shm_size: '32gb'
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    
+    # IPC mode for multi-processing
+    ipc: host
+    
+    # Keep container running
+    tty: true
+    stdin_open: true
+    
+    # Restart policy
+    restart: unless-stopped
+
+  # Optional: TensorBoard service
+  tensorboard:
+    image: tensorflow/tensorflow:latest-gpu
+    container_name: rloss-tensorboard
+    ports:
+      - "6007:6006"
+    volumes:
+      - ./logs:/logs
+    command: tensorboard --logdir=/logs --host=0.0.0.0 --port=6006
+    depends_on:
+      - rloss-a100
+    profiles:
+      - monitoring
+
+  # Optional: Jupyter Lab service
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.a100
+    image: rloss:a100-ubuntu22.04
+    container_name: rloss-jupyter
+    ports:
+      - "8889:8888"
+    volumes:
+      - .:/workspace
+      - /data/datasets:/data/datasets
+      - ./results:/workspace/results
+    working_dir: /workspace
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    profiles:
+      - jupyter
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  datasets:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/datasets
+  results:
+    driver: local

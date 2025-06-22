@@ -13,17 +13,58 @@
 [Meng Tang](http://cs.uwaterloo.ca/~m62tang), [Federico Perazzi](https://fperazzi.github.io/), [Abdelaziz Djelouah](https://adjelouah.github.io/), [Ismail Ben Ayed](https://profs.etsmtl.ca/ibenayed/), [Christopher Schroers](https://www.disneyresearch.com/people/christopher-schroers/), [Yuri Boykov](https://cs.uwaterloo.ca/about/people/yboykov)</br>
 European Conference on Computer Vision (ECCV), Munich, Germany, September 2018.
 
-## 環境構築
+## 🚀 Docker環境構築（推奨）
 
-### 必要な環境
-- Ubuntu 20.04以上
-- Python 3.8以上
-- CUDA対応GPU（推奨：A6000以上）
-- Docker（推奨）
+### A100 GPU + Ubuntu 22.04 対応
 
-### PyTorch環境のセットアップ
+**最も簡単な方法：Makefileを使用**
+```bash
+cd pytorch
 
-#### 方法1: Dockerを使用（推奨）
+# 環境構築（ワンコマンド）
+make build
+
+# 環境テスト
+make test-env
+
+# インタラクティブコンテナ起動
+make run
+
+# 利用可能なコマンド一覧
+make help
+```
+
+**Docker Composeを使用**
+```bash
+cd pytorch
+
+# 基本環境の起動
+docker-compose up -d rloss-a100
+
+# Jupyter Lab付きで起動
+docker-compose --profile jupyter up -d
+
+# コンテナに接続
+docker-compose exec rloss-a100 bash
+```
+
+**手動でDockerを使用**
+```bash
+cd pytorch
+
+# A100対応イメージのビルド
+docker build -f Dockerfile.a100 -t rloss:a100-ubuntu22.04 .
+
+# コンテナ実行
+docker run --gpus all --ipc=host -it --rm \
+    -v $(pwd):/workspace \
+    -v /data/datasets:/data/datasets \
+    rloss:a100-ubuntu22.04
+```
+
+### 従来の環境構築方法
+
+#### 方法1: 標準Dockerを使用
 ```bash
 cd pytorch
 docker build -t rloss:latest .
@@ -42,6 +83,22 @@ python setup.py build_ext --inplace
 python setup.py install
 cd ../..
 ```
+
+## 📋 Makefileコマンド一覧
+
+| コマンド | 説明 |
+|---------|------|
+| `make build` | Docker imageのビルド |
+| `make run` | インタラクティブコンテナ起動 |
+| `make test-env` | 環境テスト実行 |
+| `make train-small` | 小画像(40×40)用訓練 |
+| `make train-standard` | 標準画像(513×513)用訓練 |
+| `make inference IMAGE_PATH=/path/to/image.jpg` | 推論実行 |
+| `make jupyter` | Jupyter Notebook起動 |
+| `make clean` | コンテナとイメージの削除 |
+| `make help` | 全コマンド一覧表示 |
+
+詳細は [A100対応README](pytorch/README_A100.md) を参照してください。
 
 #### 方法3: 自動セットアップスクリプト
 ```bash
