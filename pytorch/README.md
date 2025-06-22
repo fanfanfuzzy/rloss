@@ -1,27 +1,54 @@
 # Pytorch version of regularized segmentation loss
 
-## Python enviroment and dependencies
+[日本語版READMEはこちら](../README_ja.md)
+
+## Python environment and dependencies
+
+### Modern PyTorch Setup (推奨)
+```bash
+# Python 3.8以上を使用
+pip install -r requirements.txt
 ```
-pyenv install 3.7.1
-pyenv virtualenv 3.7.1 myenv
+
+### Docker Setup (GPU A6000対応)
+```bash
+docker build -t rloss:latest .
+docker run --gpus all --ipc=host -it --rm -v $(pwd):/workspace rloss:latest
+```
+
+### Legacy Setup (pyenv)
+```bash
+pyenv install 3.8.0
+pyenv virtualenv 3.8.0 rloss-env
 cd rloss/pytorch
-pyenv local myenv
+pyenv local rloss-env
 pip install -r requirements.txt
 ```
 Other dependencies include [COCOAPI](https://github.com/cocodataset/cocoapi).
 
-An alternative is to build and run Docker
-```
-docker build -t $USER/rloss:latest .
-docker run --runtime=nvidia --ipc=host -it --rm -v /home/$USER/rloss:/home/$USER/rloss $USER/rloss:latest
-```
-
-## build python extension module
+## Build python extension module (bilateral filtering拡張モジュールのビルド)
 
 The implementation of DenseCRF loss depends on fast bilateral filtering, which is provided in C++. Use SWIG to wrap C++ for python and then build the python module of bilateral filtering.
-```
+
+```bash
 cd wrapper/bilateralfilter
 swig -python -c++ bilateralfilter.i
+python setup.py build_ext --inplace
+python setup.py install
+```
+
+### Troubleshooting bilateral filtering build
+If you encounter build errors:
+```bash
+# Clean previous builds
+python setup.py clean --all
+
+# Ensure SWIG and OpenMP are installed
+sudo apt-get install swig libomp-dev
+
+# Rebuild
+swig -python -c++ bilateralfilter.i
+python setup.py build_ext --inplace
 python setup.py install
 ```
 ## denseCRF loss in pytorch
