@@ -136,8 +136,18 @@ make jupyter
 
 ## 🐛 トラブルシューティング
 
-### GPU認識されない場合
+### GPU認識されない場合（CUDA Error 802対応）
+
+**症状**: nvidia-smiでGPUが見えるが、Dockerコンテナ内でCUDA Falseになる
+
 ```bash
+# 1. NVIDIA Container Toolkitの自動インストール・修復
+./install_nvidia_container_toolkit.sh
+
+# 2. Docker GPU アクセスの修復
+./fix_docker_gpu_access.sh
+
+# 3. 手動確認
 # NVIDIA Dockerランタイムの確認
 docker run --rm --gpus all nvidia/cuda:11.8-base-ubuntu22.04 nvidia-smi
 
@@ -145,7 +155,18 @@ docker run --rm --gpus all nvidia/cuda:11.8-base-ubuntu22.04 nvidia-smi
 make exec
 nvidia-smi
 python -c "import torch; print(torch.cuda.is_available())"
+
+# 4. 環境テスト
+make test-env
 ```
+
+**根本原因**: nvidia-container-toolkitが未インストールまたは設定不備
+
+**解決手順**:
+1. nvidia-container-toolkit のインストール
+2. Docker daemon の nvidia runtime 設定
+3. Docker サービスの再起動
+4. GPU アクセステスト
 
 ### メモリ不足エラー
 ```bash
