@@ -12,7 +12,7 @@ RESULTS_DIR       := $(WORKSPACE_DIR)/results
 
 # Build arguments
 CUDA_VERSION      := 11.8
-PYTORCH_VERSION   := 2.1.0
+PYTORCH_VERSION   := 2.5.1
 UBUNTU_VERSION    := 22.04
 
 # Runtime options
@@ -26,9 +26,44 @@ ifeq ($(NO_GPU),true)
 GPU_OPTS         :=
 endif
 
-.PHONY: all build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs
+.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status
 
 all: build run
+
+help:
+	@echo "rloss Docker Environment - Available Commands:"
+	@echo ""
+	@echo "🏗️  Build & Setup:"
+	@echo "  make build          - Build Docker image for A100 + Ubuntu 22.04"
+	@echo "  make setup-data     - Create necessary data directories"
+	@echo ""
+	@echo "🚀 Container Management:"
+	@echo "  make run            - Start interactive container"
+	@echo "  make run-detached   - Start container in background"
+	@echo "  make exec           - Enter running container"
+	@echo "  make stop           - Stop running container"
+	@echo "  make clean          - Remove Docker image"
+	@echo ""
+	@echo "🧪 Testing & Development:"
+	@echo "  make test-env       - Test environment setup"
+	@echo "  make debug          - Start debug container"
+	@echo "  make logs           - Show container logs"
+	@echo ""
+	@echo "🎯 Training & Inference:"
+	@echo "  make train-small    - Train with small images (40×40)"
+	@echo "  make train-standard - Train with standard images (513×513)"
+	@echo "  make inference IMAGE_PATH=/path/to/image.jpg - Run inference"
+	@echo ""
+	@echo "📊 Tools & Monitoring:"
+	@echo "  make jupyter        - Start Jupyter Lab (port 8888)"
+	@echo "  make monitor-gpu    - Monitor GPU usage"
+	@echo "  make status         - Show container and GPU status"
+	@echo "  make info           - Show system information"
+	@echo ""
+	@echo "💡 Environment Variables:"
+	@echo "  NO_GPU=true         - Run without GPU support"
+	@echo "  USE_LEGACY_NVIDIA=true - Use legacy nvidia-docker2 runtime"
+	@echo ""
 
 build:
 	@echo "Building Docker image for A100 + Ubuntu $(UBUNTU_VERSION)..."
@@ -185,3 +220,34 @@ debug:
 logs:
 	@echo "Showing container logs..."
 	docker logs -f $(CONTAINER_NAME)
+
+stop:
+	@echo "Stopping container..."
+	-@docker stop $(CONTAINER_NAME) || true
+	-@docker rm $(CONTAINER_NAME) || true
+	@echo "✅ Container stopped and removed."
+
+status:
+	@echo "=== Container Status ==="
+	@docker ps -a --filter name=$(CONTAINER_NAME) --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+	@echo ""
+	@echo "=== GPU Status ==="
+	@if command -v nvidia-smi >/dev/null 2>&1; then \
+		nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits; \
+	else \
+		echo "nvidia-smi not available"; \
+	fi
+
+info:
+	@echo "=== rloss Environment Information ==="
+	@echo "Docker Image: $(IMAGE)"
+	@echo "Container Name: $(CONTAINER_NAME)"
+	@echo "CUDA Version: $(CUDA_VERSION)"
+	@echo "PyTorch Version: $(PYTORCH_VERSION)"
+	@echo "Ubuntu Version: $(UBUNTU_VERSION)"
+	@echo "Workspace: $(WORKSPACE_DIR)"
+	@echo "Data Directory: $(DATA_DIR)"
+	@echo "Results Directory: $(RESULTS_DIR)"
+	@echo ""
+	@echo "=== Docker Images ==="
+	@docker images | grep -E "(REPOSITORY|$(DOCKER_IMAGE_NAME))" || echo "No rloss images found"
