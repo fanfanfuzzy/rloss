@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.a100
       args:
         CUDA_VERSION: 11.8
-        PYTORCH_VERSION: 2.0.1
+        PYTORCH_VERSION: 2.5.1
         UBUNTU_VERSION: 22.04
     image: rloss:a100-ubuntu22.04
     container_name: rloss-container

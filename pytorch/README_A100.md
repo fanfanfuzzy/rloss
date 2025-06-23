@@ -65,8 +65,8 @@ docker-compose --profile monitoring up -d
 
 ### CUDA設定
 - CUDA 11.8 (A100対応)
-- PyTorch 2.0.1
-- cuDNN 8
+- PyTorch 2.5.1
+- cuDNN 9
 
 ### メモリ最適化
 ```bash

@@ -11,7 +11,7 @@ RESULTS_DIR = $(WORKSPACE_DIR)/results
 
 # Docker build arguments
 CUDA_VERSION = 11.8
-PYTORCH_VERSION = 2.0.1
+PYTORCH_VERSION = 2.5.1
 UBUNTU_VERSION = 22.04
 
 # Default target

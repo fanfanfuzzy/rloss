@@ -1,5 +1,5 @@
 # Updated base image for modern PyTorch with CUDA support
-FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
+FROM pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
