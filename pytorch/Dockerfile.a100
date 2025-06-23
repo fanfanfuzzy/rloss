@@ -1,12 +1,12 @@
 # Dockerfile optimized for A100 GPU on Ubuntu 22.04
 # Based on PyTorch 2.0.1 with CUDA 11.8 for A100 compatibility
 
+# Dockerfile.a100
 ARG CUDA_VERSION=11.8
-ARG PYTORCH_VERSION=2.0.1
+ARG PYTORCH_VERSION=2.1.0
+FROM pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn8-devel
 ARG UBUNTU_VERSION=22.04
 
-# Use PyTorch official image with CUDA 11.8 for A100 support
-FROM pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn8-devel
 
 # Set environment variables for A100 optimization
 ENV CUDA_VISIBLE_DEVICES=0
@@ -101,24 +101,11 @@ ENV TORCH_USE_CUDA_DSA=1
 # Return to main directory
 WORKDIR /workspace
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-echo "=== rloss Environment for A100 + Ubuntu 22.04 ==="\n\
-echo "PyTorch version: $(python -c \"import torch; print(torch.__version__)\")"\n\
-echo "CUDA available: $(python -c \"import torch; print(torch.cuda.is_available())\")"\n\
-if python -c "import torch; print(torch.cuda.is_available())" | grep -q True; then\n\
-    echo "GPU: $(python -c \"import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else \'No GPU\')\")\"\n\
-    echo "CUDA version: $(python -c \"import torch; print(torch.version.cuda)\")\"\n\
-    echo "GPU memory: $(python -c \"import torch; print(f\'{torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB\' if torch.cuda.is_available() else \'N/A\')\")\"\n\
-fi\n\
-echo ""\n\
-echo "Available commands:"\n\
-echo "  python test_environment.py  - Test environment setup"\n\
-echo "  cd pytorch-deeplab_v3_plus  - Enter main directory"\n\
-echo "  jupyter lab --ip=0.0.0.0 --allow-root  - Start Jupyter Lab"\n\
-echo ""\n\
-exec "$@"' > /usr/local/bin/entrypoint.sh && \
-    chmod +x /usr/local/bin/entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+#ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["python","train.py"]
 
 # Set entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
