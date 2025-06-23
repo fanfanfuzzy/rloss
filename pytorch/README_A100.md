@@ -168,6 +168,39 @@ make test-env
 3. Docker サービスの再起動
 4. GPU アクセステスト
 
+### 自動修復スクリプト
+
+A100サーバーで以下のコマンドを実行してください：
+
+```bash
+# 包括的なGPU修復・検証
+./verify_gpu_fix.sh
+
+# または個別実行
+./install_nvidia_container_toolkit.sh  # nvidia-container-toolkit インストール
+./fix_docker_gpu_access.sh            # Docker GPU アクセス修復
+make test-gpu                          # GPU アクセステスト
+```
+
+### 手動確認手順
+
+```bash
+# 1. ホストでのGPU確認
+nvidia-smi
+
+# 2. Docker runtime確認
+docker info | grep -i runtime
+
+# 3. 基本的なCUDAコンテナテスト
+docker run --rm --gpus all nvidia/cuda:11.8-base-ubuntu22.04 nvidia-smi
+
+# 4. PyTorchコンテナテスト
+docker run --rm --gpus all pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel python -c "import torch; print(torch.cuda.is_available())"
+
+# 5. rlossコンテナテスト
+make test-env
+```
+
 ### メモリ不足エラー
 ```bash
 # バッチサイズを減らす
