@@ -26,7 +26,7 @@ ifeq ($(NO_GPU),true)
 GPU_OPTS         :=
 endif
 
-.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status
+.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status install-nvidia-toolkit fix-gpu-access test-gpu
 
 all: build run
 
@@ -59,6 +59,11 @@ help:
 	@echo "  make monitor-gpu    - Monitor GPU usage"
 	@echo "  make status         - Show container and GPU status"
 	@echo "  make info           - Show system information"
+	@echo ""
+	@echo "🔧 GPU Troubleshooting:"
+	@echo "  make install-nvidia-toolkit - Install NVIDIA Container Toolkit"
+	@echo "  make fix-gpu-access - Fix Docker GPU access issues"
+	@echo "  make test-gpu       - Test GPU access in container"
 	@echo ""
 	@echo "💡 Environment Variables:"
 	@echo "  NO_GPU=true         - Run without GPU support"
@@ -251,3 +256,38 @@ info:
 	@echo ""
 	@echo "=== Docker Images ==="
 	@docker images | grep -E "(REPOSITORY|$(DOCKER_IMAGE_NAME))" || echo "No rloss images found"
+
+install-nvidia-toolkit:
+	@echo "Installing NVIDIA Container Toolkit..."
+	@chmod +x install_nvidia_container_toolkit.sh
+	@./install_nvidia_container_toolkit.sh
+
+fix-gpu-access:
+	@echo "Fixing Docker GPU access..."
+	@chmod +x fix_docker_gpu_access.sh
+	@./fix_docker_gpu_access.sh
+
+test-gpu:
+	@echo "Testing GPU access in containers..."
+	@echo "=== Host GPU Status ==="
+	@if command -v nvidia-smi >/dev/null 2>&1; then \
+		nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits; \
+	else \
+		echo "nvidia-smi not available on host"; \
+	fi
+	@echo ""
+	@echo "=== Docker Runtime Info ==="
+	@docker info | grep -i runtime || echo "No runtime info found"
+	@echo ""
+	@echo "=== Basic CUDA Container Test ==="
+	@docker run --rm $(GPU_OPTS) nvidia/cuda:11.8-base-ubuntu22.04 nvidia-smi || echo "Basic CUDA test failed"
+	@echo ""
+	@echo "=== PyTorch GPU Test ==="
+	@docker run --rm $(GPU_OPTS) pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')" || echo "PyTorch GPU test failed"
+	@echo ""
+	@echo "=== rloss Container Test ==="
+	@if docker images | grep -q "$(IMAGE)"; then \
+		docker run --rm $(GPU_OPTS) -v $(WORKSPACE_DIR):/workspace -w /workspace $(IMAGE) python test_environment.py || echo "rloss container test failed"; \
+	else \
+		echo "rloss image not found. Run 'make build' first."; \
+	fi
