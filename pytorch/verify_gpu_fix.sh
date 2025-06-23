@@ -46,15 +46,15 @@ fi
 
 echo ""
 echo "Step 4: Testing basic CUDA container access..."
-if docker run --rm --gpus all nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
-    echo "✅ CUDA + cuDNN development container GPU access working"
+if docker run --rm --gpus all nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi >/dev/null 2>&1; then
+    echo "✅ CUDA 12.1.0 + cuDNN 8 development container GPU access working"
 else
-    echo "❌ CUDA + cuDNN development container GPU access failed"
+    echo "❌ CUDA 12.1.0 + cuDNN 8 development container GPU access failed"
     echo "Trying alternative CUDA images..."
-    if docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
-        echo "✅ CUDA 11.8.0 base container working"
-    elif docker run --rm --gpus all nvidia/cuda:11.8.0-runtime-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
-        echo "✅ CUDA 11.8.0 runtime container working"
+    if docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu20.04 nvidia-smi >/dev/null 2>&1; then
+        echo "✅ CUDA 12.1.0 base container working"
+    elif docker run --rm --gpus all nvidia/cuda:12.1.0-runtime-ubuntu20.04 nvidia-smi >/dev/null 2>&1; then
+        echo "✅ CUDA 12.1.0 runtime container working"
     else
         echo "❌ All CUDA container tests failed"
         exit 1
@@ -63,7 +63,7 @@ fi
 
 echo ""
 echo "Step 5: Testing PyTorch GPU detection..."
-if docker run --rm --gpus all pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}'); [print(f'GPU {i}: {torch.cuda.get_device_name(i)}') for i in range(torch.cuda.device_count())]"; then
+if docker run --rm --gpus all pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}'); [print(f'GPU {i}: {torch.cuda.get_device_name(i)}') for i in range(torch.cuda.device_count())]"; then
     echo "✅ PyTorch GPU detection working"
 else
     echo "❌ PyTorch GPU detection failed"

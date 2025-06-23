@@ -1,13 +1,13 @@
 # Dockerfile optimized for A100 GPU on Ubuntu 22.04
-# Based on PyTorch 2.5.1 with CUDA 11.8 for A100 compatibility
+# Based on PyTorch 2.3.0 with CUDA 12.1 for A100 compatibility
 
 # Dockerfile.a100
-ARG CUDA_VERSION=11.8
-ARG PYTORCH_VERSION=2.5.1
+ARG CUDA_VERSION=12.1
+ARG PYTORCH_VERSION=2.3.0
 ARG UBUNTU_VERSION=22.04
 
-# Use PyTorch official image with CUDA 11.8 for A100 support
-FROM pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn9-devel
+# Use PyTorch official image with CUDA 12.1 for A100 support
+FROM pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn8-devel
 
 # Set environment variables for A100 optimization
 ENV CUDA_VISIBLE_DEVICES=0

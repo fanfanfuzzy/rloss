@@ -11,8 +11,8 @@ DATA_DIR          := /data/datasets
 RESULTS_DIR       := $(WORKSPACE_DIR)/results
 
 # Build arguments
-CUDA_VERSION      := 11.8
-PYTORCH_VERSION   := 2.5.1
+CUDA_VERSION      := 12.1
+PYTORCH_VERSION   := 2.3.0
 UBUNTU_VERSION    := 22.04
 
 # Runtime options
@@ -279,11 +279,11 @@ test-gpu:
 	@echo "=== Docker Runtime Info ==="
 	@docker info | grep -i runtime || echo "No runtime info found"
 	@echo ""
-	@echo "=== CUDA + cuDNN Development Container Test ==="
-	@docker run --rm $(GPU_OPTS) nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 nvidia-smi || echo "CUDA + cuDNN test failed"
+	@echo "=== CUDA 12.1 + cuDNN 8 Development Container Test ==="
+	@docker run --rm $(GPU_OPTS) nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi || echo "CUDA 12.1 + cuDNN test failed"
 	@echo ""
 	@echo "=== PyTorch GPU Test ==="
-	@docker run --rm $(GPU_OPTS) pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')" || echo "PyTorch GPU test failed"
+	@docker run --rm $(GPU_OPTS) pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')" || echo "PyTorch GPU test failed"
 	@echo ""
 	@echo "=== rloss Container Test ==="
 	@if docker images | grep -q "$(IMAGE)"; then \
