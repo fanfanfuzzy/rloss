@@ -45,13 +45,13 @@ docker info | grep -i runtime || echo "No runtime info found"
 
 echo "🧪 Testing GPU access..."
 
-echo "Test 1: Basic CUDA container"
-if docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi; then
-    echo "✅ Basic GPU access working"
-elif docker run --rm --gpus all nvidia/cuda:11.8.0-runtime-ubuntu22.04 nvidia-smi; then
-    echo "✅ CUDA 11.8.0 runtime access working"
+echo "Test 1: CUDA + cuDNN development container"
+if docker run --rm --gpus all nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 nvidia-smi; then
+    echo "✅ CUDA + cuDNN development GPU access working"
+elif docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi; then
+    echo "✅ CUDA 11.8.0 base access working"
 else
-    echo "❌ Basic GPU access failed"
+    echo "❌ GPU access failed"
 fi
 
 echo "Test 2: PyTorch GPU detection"

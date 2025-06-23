@@ -46,15 +46,15 @@ fi
 
 echo ""
 echo "Step 4: Testing basic CUDA container access..."
-if docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
-    echo "✅ Basic CUDA container GPU access working"
+if docker run --rm --gpus all nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
+    echo "✅ CUDA + cuDNN development container GPU access working"
 else
-    echo "❌ Basic CUDA container GPU access failed"
+    echo "❌ CUDA + cuDNN development container GPU access failed"
     echo "Trying alternative CUDA images..."
-    if docker run --rm --gpus all nvidia/cuda:11.8.0-runtime-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
+    if docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
+        echo "✅ CUDA 11.8.0 base container working"
+    elif docker run --rm --gpus all nvidia/cuda:11.8.0-runtime-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
         echo "✅ CUDA 11.8.0 runtime container working"
-    elif docker run --rm --gpus all nvidia/cuda:12.2.2-base-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
-        echo "✅ CUDA 12.2.2 container working"
     else
         echo "❌ All CUDA container tests failed"
         exit 1
