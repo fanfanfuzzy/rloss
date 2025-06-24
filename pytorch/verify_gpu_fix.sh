@@ -46,14 +46,14 @@ fi
 
 echo ""
 echo "Step 4: Testing basic CUDA container access..."
-if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
+if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-base-ubuntu20.04 nvidia-smi >/dev/null 2>&1; then
     echo "✅ CUDA 12.1.0 base container GPU access working"
 else
     echo "❌ CUDA 12.1.0 base container GPU access failed"
     echo "Trying alternative CUDA images..."
-    if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-runtime-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
+    if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-runtime-ubuntu20.04 nvidia-smi >/dev/null 2>&1; then
         echo "✅ CUDA 12.1.0 runtime container working"
-    elif docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
+    elif docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi >/dev/null 2>&1; then
         echo "✅ CUDA 12.1.0 + cuDNN 8 development container working"
     else
         echo "❌ All CUDA container tests failed"

@@ -53,14 +53,14 @@ else
 fi
 
 echo "🧪 Testing GPU access in container..."
-if docker run --rm --gpus all nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi >/dev/null 2>&1; then
+if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi >/dev/null 2>&1; then
     echo "✅ GPU access in container working!"
 else
     echo "❌ GPU access in container failed"
     echo "Troubleshooting steps:"
     echo "1. Check if NVIDIA drivers are installed: nvidia-smi"
     echo "2. Check Docker info: docker info | grep -i runtime"
-    echo "3. Check container runtime: docker run --rm --gpus all nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi"
+    echo "3. Check container runtime: docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi"
     exit 1
 fi
 
