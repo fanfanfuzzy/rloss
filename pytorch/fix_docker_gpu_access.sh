@@ -46,9 +46,9 @@ docker info | grep -i runtime || echo "No runtime info found"
 echo "🧪 Testing GPU access..."
 
 echo "Test 1: CUDA 12.1 base container"
-if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi; then
+if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-base-ubuntu20.04 nvidia-smi; then
     echo "✅ CUDA 12.1.0 base GPU access working"
-elif docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-runtime-ubuntu22.04 nvidia-smi; then
+elif docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-runtime-ubuntu20.04 nvidia-smi; then
     echo "✅ CUDA 12.1.0 runtime access working"
 else
     echo "❌ GPU access failed"
