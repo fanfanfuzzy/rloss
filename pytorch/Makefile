@@ -283,7 +283,7 @@ test-gpu:
 	@docker info | grep -i runtime || echo "No runtime info found"
 	@echo ""
 	@echo "=== CUDA 12.1 Base Container Test ==="
-	@docker run --rm $(GPU_OPTS) -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi || echo "CUDA 12.1 base test failed"
+	@docker run --rm $(GPU_OPTS) -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-base-ubuntu20.04 nvidia-smi || echo "CUDA 12.1 base test failed"
 	@echo ""
 	@echo "=== PyTorch GPU Test ==="
 	@docker run --rm $(GPU_OPTS) -e NVIDIA_DRIVER_CAPABILITIES=compute,utility pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')" || echo "PyTorch GPU test failed"
