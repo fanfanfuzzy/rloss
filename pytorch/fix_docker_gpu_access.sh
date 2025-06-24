@@ -45,17 +45,17 @@ docker info | grep -i runtime || echo "No runtime info found"
 
 echo "🧪 Testing GPU access..."
 
-echo "Test 1: CUDA 12.1 + cuDNN 8 development container"
-if docker run --rm --gpus all nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi; then
-    echo "✅ CUDA 12.1.0 + cuDNN 8 development GPU access working"
-elif docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu20.04 nvidia-smi; then
-    echo "✅ CUDA 12.1.0 base access working"
+echo "Test 1: CUDA 12.1 base container"
+if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi; then
+    echo "✅ CUDA 12.1.0 base GPU access working"
+elif docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-runtime-ubuntu22.04 nvidia-smi; then
+    echo "✅ CUDA 12.1.0 runtime access working"
 else
     echo "❌ GPU access failed"
 fi
 
 echo "Test 2: PyTorch GPU detection"
-if docker run --rm --gpus all pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"; then
+if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"; then
     echo "✅ PyTorch GPU detection working"
 else
     echo "❌ PyTorch GPU detection failed"
@@ -63,7 +63,7 @@ fi
 
 echo "Test 3: rloss container GPU access"
 if docker images | grep -q "rloss:a100-ubuntu22.04"; then
-    if docker run --rm --gpus all rloss:a100-ubuntu22.04 python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"; then
+    if docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,utility rloss:a100-ubuntu22.04 python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"; then
         echo "✅ rloss container GPU access working"
     else
         echo "❌ rloss container GPU access failed"
