@@ -7,7 +7,7 @@ ARG PYTORCH_VERSION=2.3.0
 ARG UBUNTU_VERSION=22.04
 
 # Use PyTorch official image with CUDA 12.1 for A100 support
-FROM pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn8-devel
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel
 
 # Set environment variables for A100 optimization
 ENV CUDA_VISIBLE_DEVICES=0

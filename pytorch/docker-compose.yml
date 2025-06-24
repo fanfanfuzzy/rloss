@@ -6,8 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile.a100
       args:
-        CUDA_VERSION: 11.8
-        PYTORCH_VERSION: 2.5.1
+        CUDA_VERSION: 12.1
+        PYTORCH_VERSION: 2.3.0
         UBUNTU_VERSION: 22.04
     image: rloss:a100-ubuntu22.04
     container_name: rloss-container
@@ -25,6 +25,8 @@ services:
     environment:
       - CUDA_VISIBLE_DEVICES=0
       - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
       - CUDA_LAUNCH_BLOCKING=0
       - TORCH_USE_CUDA_DSA=1
@@ -94,6 +96,7 @@ services:
     environment:
       - CUDA_VISIBLE_DEVICES=0
       - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     deploy:
       resources:
         reservations:

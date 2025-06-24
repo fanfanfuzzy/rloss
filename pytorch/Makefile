@@ -88,6 +88,7 @@ run: build setup-data
 		--ulimit memlock=-1 \
 		--ulimit stack=67108864 \
 		--name $(CONTAINER_NAME) \
+		-e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
 		-v $(WORKSPACE_DIR):/workspace \
 		-v $(DATA_DIR):/data/datasets \
 		-v $(RESULTS_DIR):/workspace/results \
@@ -103,6 +104,7 @@ run-detached: build setup-data
 		--ulimit memlock=-1 \
 		--ulimit stack=67108864 \
 		--name $(CONTAINER_NAME) \
+		-e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
 		-v $(WORKSPACE_DIR):/workspace \
 		-v $(DATA_DIR):/data/datasets \
 		-v $(RESULTS_DIR):/workspace/results \
@@ -132,6 +134,7 @@ test-env:
 	@echo "Testing environment setup..."
 	docker run --rm \
 		$(GPU_OPTS) \
+		-e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
 		-v $(WORKSPACE_DIR):/workspace \
 		-w /workspace \
 		$(IMAGE) \
@@ -279,15 +282,15 @@ test-gpu:
 	@echo "=== Docker Runtime Info ==="
 	@docker info | grep -i runtime || echo "No runtime info found"
 	@echo ""
-	@echo "=== CUDA 12.1 + cuDNN 8 Development Container Test ==="
-	@docker run --rm $(GPU_OPTS) nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04 nvidia-smi || echo "CUDA 12.1 + cuDNN test failed"
+	@echo "=== CUDA 12.1 Base Container Test ==="
+	@docker run --rm $(GPU_OPTS) -e NVIDIA_DRIVER_CAPABILITIES=compute,utility nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi || echo "CUDA 12.1 base test failed"
 	@echo ""
 	@echo "=== PyTorch GPU Test ==="
-	@docker run --rm $(GPU_OPTS) pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')" || echo "PyTorch GPU test failed"
+	@docker run --rm $(GPU_OPTS) -e NVIDIA_DRIVER_CAPABILITIES=compute,utility pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')" || echo "PyTorch GPU test failed"
 	@echo ""
 	@echo "=== rloss Container Test ==="
 	@if docker images | grep -q "$(IMAGE)"; then \
-		docker run --rm $(GPU_OPTS) -v $(WORKSPACE_DIR):/workspace -w /workspace $(IMAGE) python test_environment.py || echo "rloss container test failed"; \
+		docker run --rm $(GPU_OPTS) -e NVIDIA_DRIVER_CAPABILITIES=compute,utility -v $(WORKSPACE_DIR):/workspace -w /workspace $(IMAGE) python test_environment.py || echo "rloss container test failed"; \
 	else \
 		echo "rloss image not found. Run 'make build' first."; \
 	fi
