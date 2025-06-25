@@ -15,7 +15,7 @@ then
     echo "CUDA available: True"
     echo "GPU: $(python -c 'import torch; print(torch.cuda.get_device_name(0))')"
     echo "CUDA version: $(python -c 'import torch; print(torch.version.cuda)')"
-    echo "GPU memory: $(python -c 'import torch; print(f\"{torch.cuda.get_device_properties(0).total_memory/1024**3:.1f} GB\")')"
+    echo "GPU memory: $(python -c 'import torch; print(f"{torch.cuda.get_device_properties(0).total_memory/1024**3:.1f} GB")')"
 else
     echo "CUDA available: False"
 fi
