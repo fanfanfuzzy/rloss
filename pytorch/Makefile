@@ -7,7 +7,7 @@ DOCKER_TAG        := a100-ubuntu22.04
 IMAGE             := $(DOCKER_IMAGE_NAME):$(DOCKER_TAG)
 CONTAINER_NAME    := rloss-container
 WORKSPACE_DIR     := $(shell pwd)
-DATA_DIR          := /data/datasets
+DATA_DIR          := $(HOME)/datasets
 RESULTS_DIR       := $(WORKSPACE_DIR)/results
 
 # Build arguments
