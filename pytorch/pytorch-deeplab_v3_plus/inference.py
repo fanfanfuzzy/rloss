@@ -107,7 +107,7 @@ def main():
             tr.ToTensorImage()])
     image = composed_transforms(Image.open(args.image_path).convert('RGB')).unsqueeze(0)
     image_cpu = image
-    if not args.no_cuda:
+    if not args.no_cuda and torch.cuda.is_available():
         image = image.cuda()
     start = time.time()
     output = model(image)
