@@ -98,9 +98,6 @@ def main():
               .format(args.checkpoint, checkpoint['epoch'], best_pred))
     else:
         print("No checkpoint specified, using randomly initialized model")
-    best_pred = checkpoint['best_pred']
-    print("=> loaded checkpoint '{}' (epoch {}) best_pred {}"
-          .format(args.checkpoint, checkpoint['epoch'], best_pred))
     
     model.eval()
     
