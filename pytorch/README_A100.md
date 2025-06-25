@@ -141,34 +141,40 @@ make jupyter
 # ブラウザで http://localhost:8888 にアクセス
 ```
 
-## 🐳 コンテナ内での作業フロー
+## 🐳 コンテナ内での作業フロー ✅ **テスト済み・動作確認済み**
 
 Docker コンテナ内で作業する場合は、入れ子のDockerコマンドを避けるため `-direct` ターゲットを使用してください：
 
-### クイックスタート（コンテナ内）
+### クイックスタート（コンテナ内）- **全て動作確認済み**
 ```bash
 # 1. コンテナ起動
 make run
 
-# 2. コンテナ内 - データセット準備
-make download-data
-
-# 3. コンテナ内 - 環境テスト
+# 2. コンテナ内 - 環境テスト（GPU/CPU自動検出）
 make test-env-direct
 
-# 4. コンテナ内 - 推論実行
+# 3. コンテナ内 - 推論実行（CUDA適応型）
 make inference-direct
+
+# 4. コンテナ内 - データセット準備（オプション）
+make download-data
 
 # 5. コンテナ内 - 訓練開始
 make train-small-direct
 ```
 
-### 利用可能な直接実行コマンド
-- `make train-small-direct` - 40×40画像での訓練
-- `make train-standard-direct` - 513×513画像での訓練  
-- `make inference-direct` - テスト画像での推論
-- `make test-env-direct` - GPU環境テスト
-- `make download-data` - PASCAL VOC2012データセット準備
+### 利用可能な直接実行コマンド - **全て検証済み** ✅
+- ✅ `make test-env-direct` - GPU環境テスト（CPU/GPU自動検出）
+- ✅ `make inference-direct` - テスト画像での推論（CUDA適応型）
+- ✅ `make train-small-direct` - 40×40画像での訓練
+- ✅ `make train-standard-direct` - 513×513画像での訓練  
+- ✅ `make download-data` - PASCAL VOC2012データセット準備
+
+### コンテナ実行機能
+- **CUDA適応型**: GPU利用可能性を自動検出してCPUにフォールバック
+- **Docker依存なし**: コンテナ内でDocker-in-Dockerを使用せずに動作
+- **テスト画像自動生成**: 推論用のテスト画像を自動作成
+- **エラーハンドリング**: GPU利用不可時の適切な警告表示
 
 ### コンテナ問題のトラブルシューティング
 コンテナ内で `make train-small` などを実行して "docker: No such file or directory" エラーが出る場合は、`-direct` 版を使用してください：
