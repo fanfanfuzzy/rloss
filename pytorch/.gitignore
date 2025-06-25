@@ -1,2 +1,59 @@
 wrapper/bilateralfilter/bilateralfilter.py
 wrapper/bilateralfilter/bilateralfilter_wrap.cxx
+
+# Data directories
+data/
+datasets/
+/data/
+results/
+logs/
+outputs/
+checkpoints/
+models/
+*.pth
+*.pth.tar
+*.pkl
+*.pickle
+
+# Dataset files
+*.tar
+*.zip
+*.gz
+VOCdevkit/
+benchmark_RELEASE/
+cityscapes/
+coco/
+pascal_scribble/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Weights & Biases
+wandb/
+
+# Docker volumes
+docker-volumes/
