@@ -75,20 +75,29 @@ def main():
                     freeze_bn=False)
     
     # Using cuda
-    if not args.no_cuda:
+    if not args.no_cuda and torch.cuda.is_available():
         args.gpu_ids = [int(s) for s in args.gpu_ids.split(',')]
         model = torch.nn.DataParallel(model, device_ids=args.gpu_ids)
         patch_replication_callback(model)
         model = model.cuda()
+    elif not args.no_cuda and not torch.cuda.is_available():
+        print("Warning: CUDA requested but not available, using CPU")
+        args.cuda = False
     
     # load checkpoint
-    if not os.path.isfile(args.checkpoint):
-        raise RuntimeError("=> no checkpoint found at '{}'" .format(args.checkpoint))
-    checkpoint = torch.load(args.checkpoint)
-    if args.cuda:
-        model.module.load_state_dict(checkpoint['state_dict'])
+    if args.checkpoint is not None:
+        if not os.path.isfile(args.checkpoint):
+            raise RuntimeError("=> no checkpoint found at '{}'" .format(args.checkpoint))
+        checkpoint = torch.load(args.checkpoint)
+        if args.cuda:
+            model.module.load_state_dict(checkpoint['state_dict'])
+        else:
+            model.load_state_dict(checkpoint['state_dict'])
+        best_pred = checkpoint['best_pred']
+        print("=> loaded checkpoint '{}' (epoch {}) best_pred {}"
+              .format(args.checkpoint, checkpoint['epoch'], best_pred))
     else:
-        model.load_state_dict(checkpoint['state_dict'])
+        print("No checkpoint specified, using randomly initialized model")
     best_pred = checkpoint['best_pred']
     print("=> loaded checkpoint '{}' (epoch {}) best_pred {}"
           .format(args.checkpoint, checkpoint['epoch'], best_pred))
