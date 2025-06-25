@@ -26,7 +26,7 @@ ifeq ($(NO_GPU),true)
 GPU_OPTS         :=
 endif
 
-.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status install-nvidia-toolkit fix-gpu-access test-gpu
+.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status install-nvidia-toolkit fix-gpu-access test-gpu train-small-direct train-standard-direct inference-direct test-env-direct download-data download-models
 
 all: build run
 
@@ -53,6 +53,16 @@ help:
 	@echo "  make train-small    - Train with small images (40×40)"
 	@echo "  make train-standard - Train with standard images (513×513)"
 	@echo "  make inference IMAGE_PATH=/path/to/image.jpg - Run inference"
+	@echo ""
+	@echo "🎯 Container-friendly Training & Inference (use inside container):"
+	@echo "  make train-small-direct    - Train with small images (direct execution)"
+	@echo "  make train-standard-direct - Train with standard images (direct execution)"
+	@echo "  make inference-direct [IMAGE_PATH=/path/to/image.jpg] - Run inference (direct execution)"
+	@echo "  make test-env-direct       - Test environment (direct execution)"
+	@echo ""
+	@echo "📦 Data Management:"
+	@echo "  make download-data  - Download and setup PASCAL VOC2012 dataset"
+	@echo "  make download-models - Show instructions for downloading pre-trained models"
 	@echo ""
 	@echo "📊 Tools & Monitoring:"
 	@echo "  make jupyter        - Start Jupyter Lab (port 8888)"
@@ -131,6 +141,8 @@ setup-data:
 	@echo "✅ Data directories created."
 
 test-env:
+	@echo "⚠️  Note: This target uses nested Docker and may fail inside containers."
+	@echo "    Use 'make test-env-direct' when running inside a container."
 	@echo "Testing environment setup..."
 	docker run --rm \
 		$(GPU_OPTS) \
@@ -141,6 +153,8 @@ test-env:
 		python test_environment.py
 
 train-small:
+	@echo "⚠️  Note: This target uses nested Docker and may fail inside containers."
+	@echo "    Use 'make train-small-direct' when running inside a container."
 	@echo "Starting training for small images (40x40)..."
 	docker run --rm \
 		$(GPU_OPTS) \
@@ -160,6 +174,8 @@ train-small:
 		--rloss-scale 0.25
 
 train-standard:
+	@echo "⚠️  Note: This target uses nested Docker and may fail inside containers."
+	@echo "    Use 'make train-standard-direct' when running inside a container."
 	@echo "Starting training for standard images (513x513)..."
 	docker run --rm \
 		$(GPU_OPTS) \
@@ -179,6 +195,8 @@ train-standard:
 		--rloss-scale 1.0
 
 inference:
+	@echo "⚠️  Note: This target uses nested Docker and may fail inside containers."
+	@echo "    Use 'make inference-direct' when running inside a container."
 	@if [ -z "$(IMAGE_PATH)" ]; then \ 
 		echo "Error: Please specify IMAGE_PATH"; \ 
 		echo "Usage: make inference IMAGE_PATH=/path/to/image.jpg [CHECKPOINT_PATH=/path/to/model.pth.tar]"; \ 
@@ -294,3 +312,68 @@ test-gpu:
 	else \
 		echo "rloss image not found. Run 'make build' first."; \
 	fi
+
+# Container-friendly targets (execute inside running container)
+train-small-direct:
+	@echo "Training with small images (40x40) - direct execution..."
+	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
+		--backbone mobilenet \
+		--crop-size 64 \
+		--batch-size 32 \
+		--lr 0.02 \
+		--epochs 100 \
+		--densecrfloss 2e-9 \
+		--rloss-scale 0.25
+
+train-standard-direct:
+	@echo "Training with standard images (513x513) - direct execution..."
+	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
+		--backbone resnet \
+		--crop-size 513 \
+		--batch-size 16 \
+		--lr 0.01 \
+		--epochs 50 \
+		--densecrfloss 2e-9 \
+		--rloss-scale 1.0
+
+inference-direct:
+	@if [ -z "$(IMAGE_PATH)" ]; then \
+		echo "Using default test image..."; \
+		cd pytorch-deeplab_v3_plus && python inference.py \
+			--backbone mobilenet \
+			--image_path ./misc/test.png \
+			--output_directory ./results; \
+	else \
+		echo "Running inference on $(IMAGE_PATH)..."; \
+		cd pytorch-deeplab_v3_plus && python inference.py \
+			--backbone mobilenet \
+			--image_path $(IMAGE_PATH) \
+			--output_directory ./results; \
+	fi
+
+test-env-direct:
+	@echo "Testing environment - direct execution..."
+	python test_environment.py
+
+download-data:
+	@echo "Setting up PASCAL VOC2012 dataset..."
+	@if [ ! -f ~/browser_downloads/VOCtrainval_11-May-2012.tar ]; then \
+		echo "Downloading PASCAL VOC2012 dataset..."; \
+		wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O ~/browser_downloads/VOCtrainval_11-May-2012.tar; \
+	fi
+	@echo "Extracting PASCAL VOC2012 dataset..."
+	tar -xf ~/browser_downloads/VOCtrainval_11-May-2012.tar -C $(DATA_DIR)/
+	@echo "Creating symbolic links for compatibility..."
+	@if [ ! -L $(DATA_DIR)/pascal ]; then \
+		ln -sf $(DATA_DIR)/VOCdevkit/VOC2012 $(DATA_DIR)/pascal; \
+	fi
+	@echo "✅ PASCAL VOC2012 dataset ready at $(DATA_DIR)/VOCdevkit/VOC2012"
+
+download-models:
+	@echo "Setting up pre-trained models..."
+	@mkdir -p $(WORKSPACE_DIR)/models
+	@echo "Pre-trained models available at: https://cs.uwaterloo.ca/~m62tang/rloss/pytorch"
+	@echo "Please download manually and place in $(WORKSPACE_DIR)/models/"
+	@echo "Available models:"
+	@echo "  - deeplab-resnet.pth.tar (ResNet backbone)"
+	@echo "  - deeplab-mobilenet.pth.tar (MobileNet backbone)"

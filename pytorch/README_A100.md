@@ -55,6 +55,13 @@ docker-compose --profile monitoring up -d
 - `make train-standard` - 標準画像(513×513)用訓練
 - `make inference IMAGE_PATH=/path/to/image.jpg` - 推論実行
 
+### コンテナ内での直接実行（推奨）
+- `make train-small-direct` - 小画像用訓練（直接実行）
+- `make train-standard-direct` - 標準画像用訓練（直接実行）
+- `make inference-direct` - 推論実行（直接実行）
+- `make test-env-direct` - 環境テスト（直接実行）
+- `make download-data` - PASCAL VOC2012データセット準備
+
 ### 開発支援
 - `make jupyter` - Jupyter Notebook起動
 - `make monitor-gpu` - GPU使用状況監視
@@ -132,6 +139,46 @@ docker run --rm --gpus all \
 make jupyter
 
 # ブラウザで http://localhost:8888 にアクセス
+```
+
+## 🐳 コンテナ内での作業フロー
+
+Docker コンテナ内で作業する場合は、入れ子のDockerコマンドを避けるため `-direct` ターゲットを使用してください：
+
+### クイックスタート（コンテナ内）
+```bash
+# 1. コンテナ起動
+make run
+
+# 2. コンテナ内 - データセット準備
+make download-data
+
+# 3. コンテナ内 - 環境テスト
+make test-env-direct
+
+# 4. コンテナ内 - 推論実行
+make inference-direct
+
+# 5. コンテナ内 - 訓練開始
+make train-small-direct
+```
+
+### 利用可能な直接実行コマンド
+- `make train-small-direct` - 40×40画像での訓練
+- `make train-standard-direct` - 513×513画像での訓練  
+- `make inference-direct` - テスト画像での推論
+- `make test-env-direct` - GPU環境テスト
+- `make download-data` - PASCAL VOC2012データセット準備
+
+### コンテナ問題のトラブルシューティング
+コンテナ内で `make train-small` などを実行して "docker: No such file or directory" エラーが出る場合は、`-direct` 版を使用してください：
+
+```bash
+# ❌ コンテナ内では失敗（入れ子Docker）
+make train-small
+
+# ✅ コンテナ内で動作（直接実行）
+make train-small-direct
 ```
 
 ## 🐛 トラブルシューティング
