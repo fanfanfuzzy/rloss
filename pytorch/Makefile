@@ -357,12 +357,16 @@ test-env-direct:
 
 download-data:
 	@echo "Setting up PASCAL VOC2012 dataset..."
-	@if [ ! -f ~/browser_downloads/VOCtrainval_11-May-2012.tar ]; then \
+	@mkdir -p $(DATA_DIR)
+	@if [ -f /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar ]; then \
+		echo "Using existing PASCAL VOC2012 dataset..."; \
+		cp /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar $(DATA_DIR)/; \
+	elif [ ! -f $(DATA_DIR)/VOCtrainval_11-May-2012.tar ]; then \
 		echo "Downloading PASCAL VOC2012 dataset..."; \
-		wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O ~/browser_downloads/VOCtrainval_11-May-2012.tar; \
+		wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O $(DATA_DIR)/VOCtrainval_11-May-2012.tar; \
 	fi
 	@echo "Extracting PASCAL VOC2012 dataset..."
-	tar -xf ~/browser_downloads/VOCtrainval_11-May-2012.tar -C $(DATA_DIR)/
+	tar -xf $(DATA_DIR)/VOCtrainval_11-May-2012.tar -C $(DATA_DIR)/
 	@echo "Creating symbolic links for compatibility..."
 	@if [ ! -L $(DATA_DIR)/pascal ]; then \
 		ln -sf $(DATA_DIR)/VOCdevkit/VOC2012 $(DATA_DIR)/pascal; \
