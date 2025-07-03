@@ -26,7 +26,7 @@ ifeq ($(NO_GPU),true)
 GPU_OPTS         :=
 endif
 
-.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status install-nvidia-toolkit fix-gpu-access test-gpu train-small-direct train-standard-direct inference-direct test-env-direct download-data download-models
+.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status install-nvidia-toolkit fix-gpu-access test-gpu train-small-direct train-standard-direct inference-direct test-env-direct status-direct download-data download-models
 
 all: build run
 
@@ -59,6 +59,7 @@ help:
 	@echo "  make train-standard-direct - Train with standard images (direct execution)"
 	@echo "  make inference-direct [IMAGE_PATH=/path/to/image.jpg] - Run inference (direct execution)"
 	@echo "  make test-env-direct       - Test environment (direct execution)"
+	@echo "  make status-direct         - Check container environment status"
 	@echo ""
 	@echo "📦 Data Management:"
 	@echo "  make download-data  - Download and setup PASCAL VOC2012 dataset"
@@ -312,72 +313,3 @@ test-gpu:
 	else \
 		echo "rloss image not found. Run 'make build' first."; \
 	fi
-
-# Container-friendly targets (execute inside running container)
-train-small-direct:
-	@echo "Training with small images (40x40) - direct execution..."
-	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
-		--backbone mobilenet \
-		--crop-size 64 \
-		--batch-size 32 \
-		--lr 0.02 \
-		--epochs 100 \
-		--densecrfloss 2e-9 \
-		--rloss-scale 0.25
-
-train-standard-direct:
-	@echo "Training with standard images (513x513) - direct execution..."
-	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
-		--backbone resnet \
-		--crop-size 513 \
-		--batch-size 16 \
-		--lr 0.01 \
-		--epochs 50 \
-		--densecrfloss 2e-9 \
-		--rloss-scale 1.0
-
-inference-direct:
-	@if [ -z "$(IMAGE_PATH)" ]; then \
-		echo "Using default test image..."; \
-		cd pytorch-deeplab_v3_plus && python inference.py \
-			--backbone mobilenet \
-			--image_path ./misc/test.png \
-			--output_directory ./results; \
-	else \
-		echo "Running inference on $(IMAGE_PATH)..."; \
-		cd pytorch-deeplab_v3_plus && python inference.py \
-			--backbone mobilenet \
-			--image_path $(IMAGE_PATH) \
-			--output_directory ./results; \
-	fi
-
-test-env-direct:
-	@echo "Testing environment - direct execution..."
-	python test_environment.py
-
-download-data:
-	@echo "Setting up PASCAL VOC2012 dataset..."
-	@mkdir -p $(DATA_DIR)
-	@if [ -f /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar ]; then \
-		echo "Using existing PASCAL VOC2012 dataset..."; \
-		cp /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar $(DATA_DIR)/; \
-	elif [ ! -f $(DATA_DIR)/VOCtrainval_11-May-2012.tar ]; then \
-		echo "Downloading PASCAL VOC2012 dataset..."; \
-		wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O $(DATA_DIR)/VOCtrainval_11-May-2012.tar; \
-	fi
-	@echo "Extracting PASCAL VOC2012 dataset..."
-	tar -xf $(DATA_DIR)/VOCtrainval_11-May-2012.tar -C $(DATA_DIR)/
-	@echo "Creating symbolic links for compatibility..."
-	@if [ ! -L $(DATA_DIR)/pascal ]; then \
-		ln -sf $(DATA_DIR)/VOCdevkit/VOC2012 $(DATA_DIR)/pascal; \
-	fi
-	@echo "✅ PASCAL VOC2012 dataset ready at $(DATA_DIR)/VOCdevkit/VOC2012"
-
-download-models:
-	@echo "Setting up pre-trained models..."
-	@mkdir -p $(WORKSPACE_DIR)/models
-	@echo "Pre-trained models available at: https://cs.uwaterloo.ca/~m62tang/rloss/pytorch"
-	@echo "Please download manually and place in $(WORKSPACE_DIR)/models/"
-	@echo "Available models:"
-	@echo "  - deeplab-resnet.pth.tar (ResNet backbone)"
-	@echo "  - deeplab-mobilenet.pth.tar (MobileNet backbone)"
