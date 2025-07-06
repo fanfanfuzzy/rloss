@@ -121,14 +121,30 @@ class MobileNetV2(nn.Module):
         return x, low_level_feat
 
     def _load_pretrained_model(self):
-        pretrain_dict = model_zoo.load_url('http://jeff95.me/models/mobilenet_v2-6a65762b.pth')
+        try:
+            import torchvision.models as models
+            pretrained_model = models.mobilenet_v2(weights='IMAGENET1K_V1')
+            pretrain_dict = pretrained_model.state_dict()
+        except Exception as e:
+            print(f"Warning: Could not load pretrained MobileNet v2 weights: {e}")
+            print("Continuing with randomly initialized weights...")
+            return
+            
         model_dict = {}
         state_dict = self.state_dict()
+        
         for k, v in pretrain_dict.items():
-            if k in state_dict:
+            if k in state_dict and state_dict[k].shape == v.shape:
                 model_dict[k] = v
-        state_dict.update(model_dict)
-        self.load_state_dict(state_dict)
+            elif k in state_dict:
+                print(f"Skipping layer {k}: shape mismatch ({state_dict[k].shape} vs {v.shape})")
+        
+        if model_dict:
+            state_dict.update(model_dict)
+            self.load_state_dict(state_dict)
+            print(f"Loaded {len(model_dict)} compatible layers from pretrained MobileNet v2")
+        else:
+            print("No compatible layers found, using randomly initialized weights")
 
     def _initialize_weights(self):
         for m in self.modules():
