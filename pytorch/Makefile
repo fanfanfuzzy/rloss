@@ -61,6 +61,9 @@ help:
 	@echo "  make test-env-direct       - Test environment (direct execution)"
 	@echo "  make status-direct         - Check container environment status"
 	@echo ""
+	@echo "⚠️  Note: Use '-direct' targets when working inside Docker containers"
+	@echo "    Regular targets use nested Docker and will fail inside containers"
+	@echo ""
 	@echo "📦 Data Management:"
 	@echo "  make download-data  - Download and setup PASCAL VOC2012 dataset"
 	@echo "  make download-models - Show instructions for downloading pre-trained models"
@@ -338,6 +341,8 @@ train-standard-direct:
 		--rloss-scale 1.0
 
 inference-direct:
+	@echo "Ensuring test image exists..."
+	python create_test_image_if_missing.py
 	@if [ -z "$(IMAGE_PATH)" ]; then \
 		echo "Using default test image..."; \
 		cd pytorch-deeplab_v3_plus && python inference.py \
@@ -368,27 +373,39 @@ status-direct:
 
 download-data:
 	@echo "Setting up PASCAL VOC2012 dataset..."
-	@mkdir -p /root/datasets
+	mkdir -p /root/datasets
 	@if [ -f /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar ]; then \
 		echo "Using existing PASCAL VOC2012 dataset..."; \
 		cp /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar /root/datasets/; \
 	elif [ ! -f /root/datasets/VOCtrainval_11-May-2012.tar ]; then \
 		echo "Downloading PASCAL VOC2012 dataset..."; \
 		wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O /root/datasets/VOCtrainval_11-May-2012.tar; \
+	else \
+		echo "PASCAL VOC2012 dataset already exists"; \
 	fi
-	@echo "Extracting PASCAL VOC2012 dataset..."
-	tar -xf /root/datasets/VOCtrainval_11-May-2012.tar -C /root/datasets/
+	@if [ -f /root/datasets/VOCtrainval_11-May-2012.tar ] && [ ! -d /root/datasets/VOCdevkit ]; then \
+		echo "Extracting PASCAL VOC2012 dataset..."; \
+		tar -xf /root/datasets/VOCtrainval_11-May-2012.tar -C /root/datasets/; \
+	else \
+		echo "Dataset already extracted"; \
+	fi
 	@echo "Creating symbolic links for compatibility..."
 	@if [ ! -L /root/datasets/pascal ]; then \
 		ln -sf /root/datasets/VOCdevkit/VOC2012 /root/datasets/pascal; \
+	fi
+	@if [ ! -L /data/datasets/VOCdevkit ] && [ -d /data/datasets ]; then \
+		ln -sf /root/datasets/VOCdevkit /data/datasets/VOCdevkit; \
 	fi
 	@echo "✅ PASCAL VOC2012 dataset ready at /root/datasets/VOCdevkit/VOC2012"
 
 download-models:
 	@echo "Setting up pre-trained models..."
-	@mkdir -p /workspace/models
+	mkdir -p /workspace/models
 	@echo "Pre-trained models available at: https://cs.uwaterloo.ca/~m62tang/rloss/pytorch"
 	@echo "Please download manually and place in /workspace/models/"
 	@echo "Available models:"
 	@echo "  - deeplab-resnet.pth.tar (ResNet backbone)"
 	@echo "  - deeplab-mobilenet.pth.tar (MobileNet backbone)"
+	@echo ""
+	@echo "Note: MobileNet backbone uses torchvision pretrained weights automatically"
+	@echo "ResNet backbone requires manual download from the URL above"
