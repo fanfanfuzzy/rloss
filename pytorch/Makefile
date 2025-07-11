@@ -333,6 +333,8 @@ train-small-direct:
 	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/ 2>/dev/null || echo "  ❌ SegmentationAug directory does not exist"
 	@echo "Required train.txt file:"
 	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt 2>/dev/null || echo "  ❌ train.txt NOT FOUND"
+	@echo "Scribble annotations directory (required for training):"
+	ls -la /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/ | head -3 2>/dev/null || echo "  ❌ pascal_2012_scribble directory NOT FOUND"
 	@echo "Available .txt files in ImageSets:"
 	find /data/datasets/VOCdevkit/VOC2012/ImageSets/ -name "*.txt" 2>/dev/null || echo "  No .txt files found"
 	@echo ""
@@ -360,6 +362,8 @@ train-standard-direct:
 	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/ 2>/dev/null || echo "  ❌ SegmentationAug directory does not exist"
 	@echo "Required train.txt file:"
 	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt 2>/dev/null || echo "  ❌ train.txt NOT FOUND"
+	@echo "Scribble annotations directory (required for training):"
+	ls -la /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/ | head -3 2>/dev/null || echo "  ❌ pascal_2012_scribble directory NOT FOUND"
 	@echo ""
 	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
 		--backbone resnet \
@@ -472,8 +476,31 @@ download-data:
 	if [ ! -L /data/datasets/pascal ]; then \
 		ln -sf /data/datasets/VOCdevkit/VOC2012 /data/datasets/pascal; \
 	fi
+	@echo "Creating SegmentationClassAug symbolic link..."
+	if [ ! -L /data/datasets/VOCdevkit/VOC2012/SegmentationClassAug ] && [ -d /data/datasets/VOCdevkit/VOC2012/SegmentationClass ]; then \
+		ln -sf /data/datasets/VOCdevkit/VOC2012/SegmentationClass /data/datasets/VOCdevkit/VOC2012/SegmentationClassAug; \
+		echo "✅ Created SegmentationClassAug -> SegmentationClass symbolic link"; \
+	elif [ -L /data/datasets/VOCdevkit/VOC2012/SegmentationClassAug ]; then \
+		echo "✅ SegmentationClassAug symbolic link already exists"; \
+	else \
+		echo "❌ Cannot create SegmentationClassAug link - SegmentationClass not found"; \
+	fi
 	@echo "Creating SegmentationAug files if missing..."
 	python create_segmentation_aug_files.py
+	@echo "Downloading scribble annotations..."
+	cd /data/datasets/VOCdevkit/VOC2012 && \
+	if [ ! -f pascal_2012_scribble.zip ]; then \
+		echo "Downloading scribble annotations from rloss repository..."; \
+		wget http://cs.uwaterloo.ca/~m62tang/rloss/pascal_2012_scribble.zip; \
+	else \
+		echo "Scribble annotations zip already exists"; \
+	fi && \
+	if [ ! -d pascal_2012_scribble ]; then \
+		echo "Extracting scribble annotations..."; \
+		python -c "import zipfile; zipfile.ZipFile('pascal_2012_scribble.zip').extractall('.')"; \
+	else \
+		echo "Scribble annotations directory already exists"; \
+	fi
 	@echo "=== Folder Structure Debug - After Setup ==="
 	@echo "Dataset directory structure:"
 	ls -la /data/datasets/ 2>/dev/null || echo "  /data/datasets/ does not exist"
@@ -489,8 +516,12 @@ download-data:
 	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt 2>/dev/null || echo "  ❌ train.txt NOT FOUND"
 	@echo "Available ImageSets files:"
 	find /data/datasets/VOCdevkit/VOC2012/ImageSets/ -name "*.txt" 2>/dev/null || echo "  No .txt files found"
+	@echo "Scribble annotations directory:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/ | head -5 2>/dev/null || echo "  ❌ pascal_2012_scribble directory does not exist"
+	@echo "Sample scribble files count:"
+	ls /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/*.png 2>/dev/null | wc -l || echo "  0 scribble files found"
 	@echo ""
-	@echo "✅ PASCAL VOC2012 dataset ready at /data/datasets/VOCdevkit/VOC2012"
+	@echo "✅ PASCAL VOC2012 dataset and scribble annotations ready at /data/datasets/VOCdevkit/VOC2012"
 
 download-models:
 	@echo "Setting up pre-trained models..."
