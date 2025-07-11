@@ -295,9 +295,52 @@ docker build --no-cache -t rloss:a100-ubuntu22.04 -f Dockerfile.a100 .
 - [PyTorch公式ドキュメント](https://pytorch.org/docs/)
 - [NVIDIA A100仕様](https://www.nvidia.com/en-us/data-center/a100/)
 
+## 🎯 Weights & Biases統合 ✅ **新機能**
+
+このプロジェクトはWeights & Biases (W&B)による実験追跡と可視化をサポートしています。
+
+### W&Bセットアップ（初回のみ）
+```bash
+# コンテナ内 - 安全な認証情報設定
+python setup_wandb.py
+
+# または手動で環境変数設定
+export WANDB_API_KEY=your_api_key_here
+```
+
+### W&Bログ付き訓練
+```bash
+# W&B可視化付き訓練
+make train-small-wandb
+make train-standard-wandb
+
+# または既存コマンドに --use-wandb フラグ追加
+cd pytorch-deeplab_v3_plus
+python train_withdensecrfloss.py --backbone mobilenet --crop-size 64 --batch-size 32 --use-wandb
+```
+
+### W&B機能
+- **リアルタイム指標**: 訓練/検証損失、精度、mIoU
+- **ハイパーパラメータ追跡**: 全訓練設定の自動ログ
+- **モデル比較**: 異なる実行と設定の比較
+- **安全な認証情報**: APIキーはgitリポジトリに保存されません
+
+### W&B利用開始手順
+1. https://wandb.ai/ で無料アカウント作成
+2. https://wandb.ai/authorize からAPIキー取得
+3. コンテナ内で `python setup_wandb.py` 実行
+4. `--use-wandb` フラグ付きで訓練開始
+
+### 利用可能なW&B対応コマンド
+- ✅ `make train-small-wandb` - 40×40画像訓練 + W&Bログ
+- ✅ `make train-standard-wandb` - 513×513画像訓練 + W&Bログ
+- ✅ `make setup-wandb` - W&B認証情報設定
+- ✅ `make check-wandb` - W&B設定状態確認
+
 ## 📝 注意事項
 
 1. **NVIDIA Dockerランタイム必須**: A100を使用するにはnvidia-container-toolkitが必要
 2. **CUDA 11.8推奨**: A100の全機能を活用するため
 3. **メモリ管理**: 大きなバッチサイズ使用時はメモリ監視が重要
 4. **データパス**: `/data/datasets`にデータセットを配置することを推奨
+5. **W&B認証情報**: APIキーは環境変数として設定し、gitにコミットしないこと

@@ -26,7 +26,7 @@ ifeq ($(NO_GPU),true)
 GPU_OPTS         :=
 endif
 
-.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status install-nvidia-toolkit fix-gpu-access test-gpu train-small-direct train-standard-direct inference-direct test-env-direct status-direct download-data download-models
+.PHONY: all help build run run-detached exec clean setup-data test-env train-small train-standard inference jupyter monitor-gpu debug logs stop info status install-nvidia-toolkit fix-gpu-access test-gpu train-small-direct train-standard-direct inference-direct test-env-direct status-direct download-data download-models train-small-wandb train-standard-wandb setup-wandb check-wandb
 
 all: build run
 
@@ -60,6 +60,12 @@ help:
 	@echo "  make inference-direct [IMAGE_PATH=/path/to/image.jpg] - Run inference (direct execution)"
 	@echo "  make test-env-direct       - Test environment (direct execution)"
 	@echo "  make status-direct         - Check container environment status"
+	@echo ""
+	@echo "📊 Weights & Biases Integration:"
+	@echo "  make train-small-wandb     - Train with small images + W&B logging"
+	@echo "  make train-standard-wandb  - Train with standard images + W&B logging"
+	@echo "  make setup-wandb           - Setup W&B credentials securely"
+	@echo "  make check-wandb           - Check W&B setup status"
 	@echo ""
 	@echo "⚠️  Note: Use '-direct' targets when working inside Docker containers"
 	@echo "    Regular targets use nested Docker and will fail inside containers"
@@ -596,3 +602,47 @@ download-models:
 	@echo ""
 	@echo "Note: MobileNet backbone uses torchvision pretrained weights automatically"
 	@echo "ResNet backbone requires manual download from the URL above"
+
+
+# W&B-enabled training targets (with Weights & Biases logging)
+train-small-wandb:
+	@echo "Training with small images (40x40) + W&B logging..."
+	@if [ -z "$$WANDB_API_KEY" ]; then \
+		echo "⚠️  WANDB_API_KEY not set. Run: python setup_wandb.py"; \
+		echo "   Or set manually: export WANDB_API_KEY=your_api_key"; \
+		exit 1; \
+	fi
+	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
+		--backbone mobilenet \
+		--crop-size 64 \
+		--batch-size 32 \
+		--lr 0.02 \
+		--epochs 100 \
+		--densecrfloss 2e-9 \
+		--rloss-scale 0.25 \
+		--use-wandb
+
+train-standard-wandb:
+	@echo "Training with standard images (513x513) + W&B logging..."
+	@if [ -z "$$WANDB_API_KEY" ]; then \
+		echo "⚠️  WANDB_API_KEY not set. Run: python setup_wandb.py"; \
+		echo "   Or set manually: export WANDB_API_KEY=your_api_key"; \
+		exit 1; \
+	fi
+	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
+		--backbone resnet \
+		--crop-size 513 \
+		--batch-size 16 \
+		--lr 0.01 \
+		--epochs 50 \
+		--densecrfloss 2e-9 \
+		--rloss-scale 1.0 \
+		--use-wandb
+
+setup-wandb:
+	@echo "Setting up Weights & Biases credentials..."
+	python setup_wandb.py
+
+check-wandb:
+	@echo "Checking W&B setup status..."
+	python setup_wandb.py --check

@@ -17,9 +17,20 @@ from utils.metrics import Evaluator
 
 from DenseCRFLoss import DenseCRFLoss
 
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    WANDB_AVAILABLE = False
+    print("Warning: wandb not available. Install with 'pip install wandb' for experiment tracking.")
+
 class Trainer(object):
     def __init__(self, args):
         self.args = args
+
+        self.use_wandb = args.use_wandb and WANDB_AVAILABLE
+        if self.use_wandb:
+            self._init_wandb()
 
         # Define Saver
         self.saver = Saver(args)
@@ -138,6 +149,16 @@ class Trainer(object):
             tbar.set_description('Train loss: %.3f = CE loss %.3f + CRF loss: %.3f' 
                              % (train_loss / (i + 1),train_celoss / (i + 1),train_crfloss / (i + 1)))
             self.writer.add_scalar('train/total_loss_iter', loss.item(), i + num_img_tr * epoch)
+            
+            if self.use_wandb:
+                wandb.log({
+                    "train/loss_iter": loss.item(),
+                    "train/ce_loss_iter": celoss.item(),
+                    "train/crf_loss_iter": train_crfloss / (i + 1) if self.args.densecrfloss != 0 else 0,
+                    "train/learning_rate": self.optimizer.param_groups[0]['lr'],
+                    "epoch": epoch,
+                    "step": i + num_img_tr * epoch
+                })
 
             # Show 10 * 3 inference results each epoch
             if i % (num_img_tr // 10) == 0:
@@ -147,6 +168,14 @@ class Trainer(object):
         self.writer.add_scalar('train/total_loss_epoch', train_loss, epoch)
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
         print('Loss: %.3f' % train_loss)
+        
+        if self.use_wandb:
+            wandb.log({
+                "train/loss_epoch": train_loss,
+                "train/ce_loss_epoch": train_celoss,
+                "train/crf_loss_epoch": train_crfloss,
+                "epoch": epoch
+            })
 
         #if self.args.no_val:
         if self.args.save_interval:
@@ -196,6 +225,16 @@ class Trainer(object):
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
         print("Acc:{}, Acc_class:{}, mIoU:{}, fwIoU: {}".format(Acc, Acc_class, mIoU, FWIoU))
         print('Loss: %.3f' % test_loss)
+        
+        if self.use_wandb:
+            wandb.log({
+                "val/loss": test_loss,
+                "val/mIoU": mIoU,
+                "val/pixel_accuracy": Acc,
+                "val/pixel_accuracy_class": Acc_class,
+                "val/frequency_weighted_IoU": FWIoU,
+                "epoch": epoch
+            })
 
         new_pred = mIoU
         if new_pred > self.best_pred:
@@ -207,6 +246,39 @@ class Trainer(object):
                 'optimizer': self.optimizer.state_dict(),
                 'best_pred': self.best_pred,
             }, is_best)
+
+    def _init_wandb(self):
+        """Initialize Weights & Biases with secure API key handling"""
+        wandb_api_key = os.environ.get('WANDB_API_KEY')
+        if not wandb_api_key:
+            print("Warning: WANDB_API_KEY environment variable not set.")
+            print("Please set your W&B API key: export WANDB_API_KEY=your_api_key")
+            print("Or run: python setup_wandb.py")
+            self.use_wandb = False
+            return
+            
+        wandb.init(
+            project="rloss-weakly-supervised-segmentation",
+            name=f"{self.args.backbone}-{self.args.dataset}-crop{self.args.crop_size}",
+            config={
+                "backbone": self.args.backbone,
+                "dataset": self.args.dataset,
+                "crop_size": self.args.crop_size,
+                "batch_size": self.args.batch_size,
+                "learning_rate": self.args.lr,
+                "epochs": self.args.epochs,
+                "densecrfloss_weight": self.args.densecrfloss,
+                "rloss_scale": self.args.rloss_scale,
+                "sigma_rgb": self.args.sigma_rgb,
+                "sigma_xy": self.args.sigma_xy,
+                "optimizer": "SGD",
+                "momentum": self.args.momentum,
+                "weight_decay": self.args.weight_decay,
+                "lr_scheduler": self.args.lr_scheduler,
+            },
+            tags=["weakly-supervised", "segmentation", "densecrf", "scribble-labels"]
+        )
+        print("✅ Weights & Biases initialized successfully")
 
 def main():
     parser = argparse.ArgumentParser(description="PyTorch DeeplabV3Plus Training")
@@ -294,6 +366,8 @@ def main():
     parser.add_argument('--sigma-xy',type=float,default=80.0,
                         help='DenseCRF sigma_xy')
     
+    parser.add_argument('--use-wandb', action='store_true', default=False,
+                        help='enable Weights & Biases logging (requires WANDB_API_KEY env var)')
 
     args = parser.parse_args()
     
@@ -347,6 +421,9 @@ def main():
             trainer.validation(epoch)
 
     trainer.writer.close()
+    
+    if hasattr(trainer, 'use_wandb') and trainer.use_wandb:
+        wandb.finish()
 
 if __name__ == "__main__":
    main()
