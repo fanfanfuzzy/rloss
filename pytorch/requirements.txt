@@ -6,6 +6,7 @@ scipy>=1.7.0
 matplotlib>=3.3.0
 tqdm>=4.60.0
 tensorboardX>=2.4
+wandb>=0.15.0
 pycocotools>=2.0.4
 Cython>=0.29.24
 protobuf>=3.19.0
