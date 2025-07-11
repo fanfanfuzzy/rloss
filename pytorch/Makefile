@@ -320,6 +320,24 @@ test-gpu:
 # Container-friendly targets (execute inside running container)
 train-small-direct:
 	@echo "Training with small images (40x40) - direct execution..."
+	@echo "=== Folder Structure Debug - Training Setup ==="
+	@echo "Current working directory:"
+	pwd
+	@echo "Dataset path expected by training script:"
+	@echo "  /data/datasets/VOCdevkit/VOC2012/"
+	@echo "Dataset directory structure:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ 2>/dev/null || echo "  ❌ /data/datasets/VOCdevkit/VOC2012/ does not exist"
+	@echo "ImageSets directory:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/ 2>/dev/null || echo "  ❌ ImageSets directory does not exist"
+	@echo "SegmentationAug directory:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/ 2>/dev/null || echo "  ❌ SegmentationAug directory does not exist"
+	@echo "Required train.txt file:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt 2>/dev/null || echo "  ❌ train.txt NOT FOUND"
+	@echo "Scribble annotations directory (required for training):"
+	ls -la /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/ | head -3 2>/dev/null || echo "  ❌ pascal_2012_scribble directory NOT FOUND"
+	@echo "Available .txt files in ImageSets:"
+	find /data/datasets/VOCdevkit/VOC2012/ImageSets/ -name "*.txt" 2>/dev/null || echo "  No .txt files found"
+	@echo ""
 	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
 		--backbone mobilenet \
 		--crop-size 64 \
@@ -331,6 +349,22 @@ train-small-direct:
 
 train-standard-direct:
 	@echo "Training with standard images (513x513) - direct execution..."
+	@echo "=== Folder Structure Debug - Training Setup ==="
+	@echo "Current working directory:"
+	pwd
+	@echo "Dataset path expected by training script:"
+	@echo "  /data/datasets/VOCdevkit/VOC2012/"
+	@echo "Dataset directory structure:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ 2>/dev/null || echo "  ❌ /data/datasets/VOCdevkit/VOC2012/ does not exist"
+	@echo "ImageSets directory:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/ 2>/dev/null || echo "  ❌ ImageSets directory does not exist"
+	@echo "SegmentationAug directory:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/ 2>/dev/null || echo "  ❌ SegmentationAug directory does not exist"
+	@echo "Required train.txt file:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt 2>/dev/null || echo "  ❌ train.txt NOT FOUND"
+	@echo "Scribble annotations directory (required for training):"
+	ls -la /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/ | head -3 2>/dev/null || echo "  ❌ pascal_2012_scribble directory NOT FOUND"
+	@echo ""
 	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
 		--backbone resnet \
 		--crop-size 513 \
@@ -343,7 +377,17 @@ train-standard-direct:
 inference-direct:
 	@echo "Ensuring test image exists..."
 	python create_test_image_if_missing.py
-	@if [ -z "$(IMAGE_PATH)" ]; then \
+	@echo "=== Folder Structure Debug - Inference Setup ==="
+	@echo "Current working directory:"
+	pwd
+	@echo "Test image location:"
+	ls -la pytorch-deeplab_v3_plus/misc/test.png 2>/dev/null || echo "  ❌ Test image does not exist"
+	@echo "Results directory:"
+	ls -la ./results/ 2>/dev/null || echo "  Results directory does not exist (will be created)"
+	@echo "Dataset directory (for model loading):"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ 2>/dev/null || echo "  ❌ Dataset directory does not exist"
+	@echo ""
+	if [ -z "$(IMAGE_PATH)" ]; then \
 		echo "Using default test image..."; \
 		cd pytorch-deeplab_v3_plus && python inference.py \
 			--backbone mobilenet \
@@ -359,44 +403,125 @@ inference-direct:
 
 test-env-direct:
 	@echo "Testing environment - direct execution..."
+	@echo "=== Folder Structure Debug - Environment Test ==="
+	@echo "Current working directory:"
+	pwd
+	@echo "Workspace structure:"
+	ls -la /workspace/ 2>/dev/null || echo "  /workspace/ does not exist"
+	@echo "Dataset directory:"
+	ls -la /data/datasets/ 2>/dev/null || echo "  /data/datasets/ does not exist"
+	@echo "Results directory:"
+	ls -la ./results/ 2>/dev/null || echo "  ./results/ does not exist"
+	@echo ""
 	python test_environment.py
 
 status-direct:
 	@echo "=== Container Environment Status ==="
 	@echo "Current directory: $(shell pwd)"
+	@echo "User: $(shell whoami)"
 	@echo "Python version: $(shell python --version 2>&1)"
 	@echo "PyTorch version: $(shell python -c 'import torch; print(torch.__version__)' 2>/dev/null || echo 'Not available')"
 	@echo "CUDA available: $(shell python -c 'import torch; print(torch.cuda.is_available())' 2>/dev/null || echo 'Unknown')"
 	@echo "GPU count: $(shell python -c 'import torch; print(torch.cuda.device_count())' 2>/dev/null || echo 'Unknown')"
-	@echo "Data directory: /data/datasets"
+	@echo ""
+	@echo "=== Folder Structure Debug - Complete Status ==="
+	@echo "Workspace directory:"
+	ls -la /workspace/ 2>/dev/null || echo "  /workspace/ does not exist"
+	@echo "Data directory:"
+	ls -la /data/datasets/ 2>/dev/null || echo "  /data/datasets/ does not exist"
+	@echo "VOCdevkit structure:"
+	ls -la /data/datasets/VOCdevkit/ 2>/dev/null || echo "  /data/datasets/VOCdevkit/ does not exist"
+	@echo "VOC2012 structure:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ 2>/dev/null || echo "  /data/datasets/VOCdevkit/VOC2012/ does not exist"
+	@echo "ImageSets structure:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/ 2>/dev/null || echo "  /data/datasets/VOCdevkit/VOC2012/ImageSets/ does not exist"
+	@echo "SegmentationAug structure:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/ 2>/dev/null || echo "  /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/ does not exist"
+	@echo "Required files check:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt 2>/dev/null || echo "  ❌ train.txt NOT FOUND"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/val.txt 2>/dev/null || echo "  ❌ val.txt NOT FOUND"
+	@echo "Results directory:"
+	ls -la ./results/ 2>/dev/null || echo "  ./results/ does not exist"
 	@echo "Dataset status: $(shell ls -la /data/datasets 2>/dev/null | wc -l) items in data directory"
 
 download-data:
 	@echo "Setting up PASCAL VOC2012 dataset..."
+	@echo "=== Folder Structure Debug - Before Setup ==="
+	@echo "Host datasets directory:"
+	ls -la /data/datasets/ 2>/dev/null || echo "  /data/datasets/ does not exist"
+	@echo "Container datasets directory:"
+	ls -la /root/datasets/ 2>/dev/null || echo "  /root/datasets/ does not exist"
+	@echo ""
+	mkdir -p /data/datasets
 	mkdir -p /root/datasets
-	@if [ -f /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar ]; then \
+	if [ -f /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar ]; then \
 		echo "Using existing PASCAL VOC2012 dataset..."; \
-		cp /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar /root/datasets/; \
-	elif [ ! -f /root/datasets/VOCtrainval_11-May-2012.tar ]; then \
+		cp /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar /data/datasets/; \
+	elif [ ! -f /data/datasets/VOCtrainval_11-May-2012.tar ]; then \
 		echo "Downloading PASCAL VOC2012 dataset..."; \
-		wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O /root/datasets/VOCtrainval_11-May-2012.tar; \
+		wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O /data/datasets/VOCtrainval_11-May-2012.tar; \
 	else \
 		echo "PASCAL VOC2012 dataset already exists"; \
 	fi
-	@if [ -f /root/datasets/VOCtrainval_11-May-2012.tar ] && [ ! -d /root/datasets/VOCdevkit ]; then \
+	if [ -f /data/datasets/VOCtrainval_11-May-2012.tar ] && [ ! -d /data/datasets/VOCdevkit ]; then \
 		echo "Extracting PASCAL VOC2012 dataset..."; \
-		tar -xf /root/datasets/VOCtrainval_11-May-2012.tar -C /root/datasets/; \
+		tar -xf /data/datasets/VOCtrainval_11-May-2012.tar -C /data/datasets/; \
 	else \
 		echo "Dataset already extracted"; \
 	fi
 	@echo "Creating symbolic links for compatibility..."
-	@if [ ! -L /root/datasets/pascal ]; then \
-		ln -sf /root/datasets/VOCdevkit/VOC2012 /root/datasets/pascal; \
+	if [ ! -L /root/datasets/VOCdevkit ] && [ -d /data/datasets/VOCdevkit ]; then \
+		ln -sf /data/datasets/VOCdevkit /root/datasets/VOCdevkit; \
 	fi
-	@if [ ! -L /data/datasets/VOCdevkit ] && [ -d /data/datasets ]; then \
-		ln -sf /root/datasets/VOCdevkit /data/datasets/VOCdevkit; \
+	if [ ! -L /data/datasets/pascal ]; then \
+		ln -sf /data/datasets/VOCdevkit/VOC2012 /data/datasets/pascal; \
 	fi
-	@echo "✅ PASCAL VOC2012 dataset ready at /root/datasets/VOCdevkit/VOC2012"
+	@echo "Creating SegmentationClassAug symbolic link..."
+	if [ ! -L /data/datasets/VOCdevkit/VOC2012/SegmentationClassAug ] && [ -d /data/datasets/VOCdevkit/VOC2012/SegmentationClass ]; then \
+		ln -sf /data/datasets/VOCdevkit/VOC2012/SegmentationClass /data/datasets/VOCdevkit/VOC2012/SegmentationClassAug; \
+		echo "✅ Created SegmentationClassAug -> SegmentationClass symbolic link"; \
+	elif [ -L /data/datasets/VOCdevkit/VOC2012/SegmentationClassAug ]; then \
+		echo "✅ SegmentationClassAug symbolic link already exists"; \
+	else \
+		echo "❌ Cannot create SegmentationClassAug link - SegmentationClass not found"; \
+	fi
+	@echo "Creating SegmentationAug files if missing..."
+	python create_segmentation_aug_files.py
+	@echo "Downloading scribble annotations..."
+	cd /data/datasets/VOCdevkit/VOC2012 && \
+	if [ ! -f pascal_2012_scribble.zip ]; then \
+		echo "Downloading scribble annotations from rloss repository..."; \
+		wget http://cs.uwaterloo.ca/~m62tang/rloss/pascal_2012_scribble.zip; \
+	else \
+		echo "Scribble annotations zip already exists"; \
+	fi && \
+	if [ ! -d pascal_2012_scribble ]; then \
+		echo "Extracting scribble annotations..."; \
+		python -c "import zipfile; zipfile.ZipFile('pascal_2012_scribble.zip').extractall('.')"; \
+	else \
+		echo "Scribble annotations directory already exists"; \
+	fi
+	@echo "=== Folder Structure Debug - After Setup ==="
+	@echo "Dataset directory structure:"
+	ls -la /data/datasets/ 2>/dev/null || echo "  /data/datasets/ does not exist"
+	@echo "VOCdevkit structure:"
+	ls -la /data/datasets/VOCdevkit/ 2>/dev/null || echo "  /data/datasets/VOCdevkit/ does not exist"
+	@echo "VOC2012 structure:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ 2>/dev/null || echo "  /data/datasets/VOCdevkit/VOC2012/ does not exist"
+	@echo "ImageSets structure:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/ 2>/dev/null || echo "  /data/datasets/VOCdevkit/VOC2012/ImageSets/ does not exist"
+	@echo "SegmentationAug structure:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/ 2>/dev/null || echo "  /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/ does not exist"
+	@echo "Required train.txt file:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt 2>/dev/null || echo "  ❌ train.txt NOT FOUND"
+	@echo "Available ImageSets files:"
+	find /data/datasets/VOCdevkit/VOC2012/ImageSets/ -name "*.txt" 2>/dev/null || echo "  No .txt files found"
+	@echo "Scribble annotations directory:"
+	ls -la /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/ | head -5 2>/dev/null || echo "  ❌ pascal_2012_scribble directory does not exist"
+	@echo "Sample scribble files count:"
+	ls /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/*.png 2>/dev/null | wc -l || echo "  0 scribble files found"
+	@echo ""
+	@echo "✅ PASCAL VOC2012 dataset and scribble annotations ready at /data/datasets/VOCdevkit/VOC2012"
 
 download-models:
 	@echo "Setting up pre-trained models..."
