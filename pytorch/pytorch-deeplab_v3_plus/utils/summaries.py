@@ -17,11 +17,11 @@ class TensorboardSummary(object):
         writer.add_image('Image', grid_image, global_step)
         
         pred_seg = decode_seg_map_sequence(torch.max(output[:3], 1)[1].detach().cpu().numpy(), dataset=dataset)
-        pred_seg_tensor = torch.from_numpy(pred_seg).float() / 255.0
+        pred_seg_tensor = pred_seg.float() / 255.0
         grid_image = make_grid(pred_seg_tensor, 3, normalize=False)
         writer.add_image('Predicted label', grid_image, global_step)
         
         gt_seg = decode_seg_map_sequence(torch.squeeze(target[:3], 1).detach().cpu().numpy(), dataset=dataset)
-        gt_seg_tensor = torch.from_numpy(gt_seg).float() / 255.0
+        gt_seg_tensor = gt_seg.float() / 255.0
         grid_image = make_grid(gt_seg_tensor, 3, normalize=False)
         writer.add_image('Groundtruth label', grid_image, global_step)
