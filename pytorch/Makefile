@@ -66,6 +66,7 @@ help:
 	@echo ""
 	@echo "📦 Data Management:"
 	@echo "  make download-data  - Download and setup PASCAL VOC2012 dataset"
+	@echo "  make clean-data     - Clean dataset directories for fresh download"
 	@echo "  make download-models - Show instructions for downloading pre-trained models"
 	@echo ""
 	@echo "📊 Tools & Monitoring:"
@@ -454,29 +455,68 @@ download-data:
 	@echo ""
 	mkdir -p /data/datasets
 	mkdir -p /root/datasets
+	@echo "=== Step 1: Download PASCAL VOC2012 Dataset ==="
 	if [ -f /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar ]; then \
-		echo "Using existing PASCAL VOC2012 dataset..."; \
+		echo "Using existing PASCAL VOC2012 dataset from browser downloads..."; \
 		cp /home/ubuntu/browser_downloads/VOCtrainval_11-May-2012.tar /data/datasets/; \
 	elif [ ! -f /data/datasets/VOCtrainval_11-May-2012.tar ]; then \
 		echo "Downloading PASCAL VOC2012 dataset..."; \
 		wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O /data/datasets/VOCtrainval_11-May-2012.tar; \
 	else \
-		echo "PASCAL VOC2012 dataset already exists"; \
+		echo "PASCAL VOC2012 dataset tar already exists"; \
 	fi
-	if [ -f /data/datasets/VOCtrainval_11-May-2012.tar ] && [ ! -d /data/datasets/VOCdevkit ]; then \
-		echo "Extracting PASCAL VOC2012 dataset..."; \
-		tar -xf /data/datasets/VOCtrainval_11-May-2012.tar -C /data/datasets/; \
+	@echo "Verifying tar file integrity..."
+	if [ -f /data/datasets/VOCtrainval_11-May-2012.tar ]; then \
+		echo "✅ Tar file exists (size: $$(ls -lh /data/datasets/VOCtrainval_11-May-2012.tar | awk '{print $$5}'))"; \
+		echo "Testing tar file integrity..."; \
+		tar -tf /data/datasets/VOCtrainval_11-May-2012.tar | head -5; \
 	else \
-		echo "Dataset already extracted"; \
+		echo "❌ Tar file not found - download failed"; \
+		exit 1; \
 	fi
-	@echo "Creating symbolic links for compatibility..."
+	@echo "=== Step 2: Extract PASCAL VOC2012 Dataset ==="
+	if [ -f /data/datasets/VOCtrainval_11-May-2012.tar ]; then \
+		if [ ! -d /data/datasets/VOCdevkit/VOC2012/ImageSets ]; then \
+			echo "Extracting PASCAL VOC2012 dataset..."; \
+			rm -rf /data/datasets/VOCdevkit 2>/dev/null || true; \
+			tar -xf /data/datasets/VOCtrainval_11-May-2012.tar -C /data/datasets/; \
+			echo "✅ Dataset extraction completed"; \
+		else \
+			echo "Dataset already extracted (ImageSets directory exists)"; \
+		fi; \
+	else \
+		echo "❌ Cannot extract - tar file not found"; \
+		exit 1; \
+	fi
+	@echo "=== Step 3: Verify Core Dataset Structure ==="
+	@echo "Checking essential directories..."
+	if [ ! -d /data/datasets/VOCdevkit/VOC2012 ]; then \
+		echo "❌ VOC2012 directory not found after extraction"; \
+		exit 1; \
+	fi
+	if [ ! -d /data/datasets/VOCdevkit/VOC2012/ImageSets ]; then \
+		echo "❌ ImageSets directory not found after extraction"; \
+		exit 1; \
+	fi
+	if [ ! -d /data/datasets/VOCdevkit/VOC2012/JPEGImages ]; then \
+		echo "❌ JPEGImages directory not found after extraction"; \
+		exit 1; \
+	fi
+	if [ ! -d /data/datasets/VOCdevkit/VOC2012/SegmentationClass ]; then \
+		echo "❌ SegmentationClass directory not found after extraction"; \
+		exit 1; \
+	fi
+	@echo "✅ All essential directories verified"
+	@echo "=== Step 4: Create Symbolic Links ==="
 	if [ ! -L /root/datasets/VOCdevkit ] && [ -d /data/datasets/VOCdevkit ]; then \
 		ln -sf /data/datasets/VOCdevkit /root/datasets/VOCdevkit; \
+		echo "✅ Created /root/datasets/VOCdevkit -> /data/datasets/VOCdevkit"; \
 	fi
 	if [ ! -L /data/datasets/pascal ]; then \
 		ln -sf /data/datasets/VOCdevkit/VOC2012 /data/datasets/pascal; \
+		echo "✅ Created /data/datasets/pascal -> /data/datasets/VOCdevkit/VOC2012"; \
 	fi
-	@echo "Creating SegmentationClassAug symbolic link..."
+	@echo "=== Step 5: Create SegmentationClassAug Link ==="
 	if [ ! -L /data/datasets/VOCdevkit/VOC2012/SegmentationClassAug ] && [ -d /data/datasets/VOCdevkit/VOC2012/SegmentationClass ]; then \
 		ln -sf /data/datasets/VOCdevkit/VOC2012/SegmentationClass /data/datasets/VOCdevkit/VOC2012/SegmentationClassAug; \
 		echo "✅ Created SegmentationClassAug -> SegmentationClass symbolic link"; \
@@ -484,10 +524,11 @@ download-data:
 		echo "✅ SegmentationClassAug symbolic link already exists"; \
 	else \
 		echo "❌ Cannot create SegmentationClassAug link - SegmentationClass not found"; \
+		exit 1; \
 	fi
-	@echo "Creating SegmentationAug files if missing..."
+	@echo "=== Step 6: Create SegmentationAug Files ==="
 	python create_segmentation_aug_files.py
-	@echo "Downloading scribble annotations..."
+	@echo "=== Step 7: Download Scribble Annotations ==="
 	cd /data/datasets/VOCdevkit/VOC2012 && \
 	if [ ! -f pascal_2012_scribble.zip ]; then \
 		echo "Downloading scribble annotations from rloss repository..."; \
@@ -501,7 +542,7 @@ download-data:
 	else \
 		echo "Scribble annotations directory already exists"; \
 	fi
-	@echo "=== Folder Structure Debug - After Setup ==="
+	@echo "=== Final Verification ==="
 	@echo "Dataset directory structure:"
 	ls -la /data/datasets/ 2>/dev/null || echo "  /data/datasets/ does not exist"
 	@echo "VOCdevkit structure:"
@@ -515,13 +556,34 @@ download-data:
 	@echo "Required train.txt file:"
 	ls -la /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt 2>/dev/null || echo "  ❌ train.txt NOT FOUND"
 	@echo "Available ImageSets files:"
-	find /data/datasets/VOCdevkit/VOC2012/ImageSets/ -name "*.txt" 2>/dev/null || echo "  No .txt files found"
+	find /data/datasets/VOCdevkit/VOC2012/ImageSets/ -name "*.txt" 2>/dev/null | head -10 || echo "  No .txt files found"
 	@echo "Scribble annotations directory:"
 	ls -la /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/ | head -5 2>/dev/null || echo "  ❌ pascal_2012_scribble directory does not exist"
 	@echo "Sample scribble files count:"
 	ls /data/datasets/VOCdevkit/VOC2012/pascal_2012_scribble/*.png 2>/dev/null | wc -l || echo "  0 scribble files found"
 	@echo ""
-	@echo "✅ PASCAL VOC2012 dataset and scribble annotations ready at /data/datasets/VOCdevkit/VOC2012"
+	@echo "=== Dataset Setup Summary ==="
+	@if [ -f /data/datasets/VOCdevkit/VOC2012/ImageSets/SegmentationAug/train.txt ]; then \
+		echo "✅ PASCAL VOC2012 dataset setup SUCCESSFUL"; \
+		echo "✅ Dataset ready at /data/datasets/VOCdevkit/VOC2012"; \
+		echo "✅ Training can proceed with make train-small-direct"; \
+	else \
+		echo "❌ PASCAL VOC2012 dataset setup FAILED"; \
+		echo "❌ Missing required train.txt file"; \
+		exit 1; \
+	fi
+
+clean-data:
+	@echo "Cleaning dataset directories..."
+	@echo "Removing /data/datasets/VOCdevkit..."
+	rm -rf /data/datasets/VOCdevkit
+	@echo "Removing /data/datasets/VOCtrainval_11-May-2012.tar..."
+	rm -f /data/datasets/VOCtrainval_11-May-2012.tar
+	@echo "Removing /root/datasets/VOCdevkit symlink..."
+	rm -f /root/datasets/VOCdevkit
+	@echo "Removing /data/datasets/pascal symlink..."
+	rm -f /data/datasets/pascal
+	@echo "✅ Dataset directories cleaned - ready for fresh download"
 
 download-models:
 	@echo "Setting up pre-trained models..."
