@@ -39,7 +39,10 @@ def setup_wandb_credentials():
         print("💡 To make this permanent, add to your shell profile:")
         print(f"   export WANDB_API_KEY={api_key}")
         print()
-        print("🚀 You can now run training with --use-wandb flag")
+        print("🚀 For immediate use in current session, run:")
+        print(f"   export WANDB_API_KEY={api_key}")
+        print()
+        print("🎯 You can now run training with --use-wandb flag")
         return True
         
     except KeyboardInterrupt:
@@ -55,12 +58,21 @@ def check_wandb_status():
         import wandb
         print("✅ wandb package is installed")
         
-        if os.environ.get('WANDB_API_KEY'):
+        api_key = os.environ.get('WANDB_API_KEY')
+        if api_key:
             print("✅ WANDB_API_KEY is set")
+            print(f"   Key: {api_key[:8]}...{api_key[-4:] if len(api_key) > 12 else '***'}")
             print("🎯 Ready for W&B logging!")
             return True
         else:
-            print("⚠️  WANDB_API_KEY not set")
+            print("⚠️  WANDB_API_KEY not set in current environment")
+            print("   Current environment variables:")
+            wandb_vars = {k: v for k, v in os.environ.items() if 'WANDB' in k.upper()}
+            if wandb_vars:
+                for k, v in wandb_vars.items():
+                    print(f"     {k}={v[:8]}...{v[-4:] if len(v) > 12 else '***'}")
+            else:
+                print("     No WANDB-related environment variables found")
             return False
             
     except ImportError:

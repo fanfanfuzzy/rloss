@@ -607,11 +607,8 @@ download-models:
 # W&B-enabled training targets (with Weights & Biases logging)
 train-small-wandb:
 	@echo "Training with small images (40x40) + W&B logging..."
-	@if [ -z "$$WANDB_API_KEY" ]; then \
-		echo "⚠️  WANDB_API_KEY not set. Run: python setup_wandb.py"; \
-		echo "   Or set manually: export WANDB_API_KEY=your_api_key"; \
-		exit 1; \
-	fi
+	@echo "Checking W&B setup..."
+	@python setup_wandb.py --check || (echo "⚠️  W&B not properly configured. Run: python setup_wandb.py" && exit 1)
 	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
 		--backbone mobilenet \
 		--crop-size 64 \
@@ -624,11 +621,8 @@ train-small-wandb:
 
 train-standard-wandb:
 	@echo "Training with standard images (513x513) + W&B logging..."
-	@if [ -z "$$WANDB_API_KEY" ]; then \
-		echo "⚠️  WANDB_API_KEY not set. Run: python setup_wandb.py"; \
-		echo "   Or set manually: export WANDB_API_KEY=your_api_key"; \
-		exit 1; \
-	fi
+	@echo "Checking W&B setup..."
+	@python setup_wandb.py --check || (echo "⚠️  W&B not properly configured. Run: python setup_wandb.py" && exit 1)
 	cd pytorch-deeplab_v3_plus && python train_withdensecrfloss.py \
 		--backbone resnet \
 		--crop-size 513 \
