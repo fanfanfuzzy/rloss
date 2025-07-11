@@ -15,9 +15,13 @@ class TensorboardSummary(object):
     def visualize_image(self, writer, dataset, image, target, output, global_step):
         grid_image = make_grid(image[:3].clone().cpu().data, 3, normalize=True)
         writer.add_image('Image', grid_image, global_step)
-        grid_image = make_grid(decode_seg_map_sequence(torch.max(output[:3], 1)[1].detach().cpu().numpy(),
-                                                       dataset=dataset), 3, normalize=False, range=(0, 255))
+        
+        pred_seg = decode_seg_map_sequence(torch.max(output[:3], 1)[1].detach().cpu().numpy(), dataset=dataset)
+        pred_seg_tensor = torch.from_numpy(pred_seg).float() / 255.0
+        grid_image = make_grid(pred_seg_tensor, 3, normalize=False)
         writer.add_image('Predicted label', grid_image, global_step)
-        grid_image = make_grid(decode_seg_map_sequence(torch.squeeze(target[:3], 1).detach().cpu().numpy(),
-                                                       dataset=dataset), 3, normalize=False, range=(0, 255))
+        
+        gt_seg = decode_seg_map_sequence(torch.squeeze(target[:3], 1).detach().cpu().numpy(), dataset=dataset)
+        gt_seg_tensor = torch.from_numpy(gt_seg).float() / 255.0
+        grid_image = make_grid(gt_seg_tensor, 3, normalize=False)
         writer.add_image('Groundtruth label', grid_image, global_step)
