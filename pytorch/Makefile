@@ -52,12 +52,12 @@ help:
 	@echo "🎯 Training & Inference:"
 	@echo "  make train-small    - Train with small images (40×40)"
 	@echo "  make train-standard - Train with standard images (513×513)"
-	@echo "  make inference IMAGE_PATH=/path/to/image.jpg - Run inference"
+	@echo "  make inference IMAGE_PATH=/path/to/image.jpg - Run inference with bicubic interpolation"
 	@echo ""
 	@echo "🎯 Container-friendly Training & Inference (use inside container):"
 	@echo "  make train-small-direct    - Train with small images (direct execution)"
 	@echo "  make train-standard-direct - Train with standard images (direct execution)"
-	@echo "  make inference-direct [IMAGE_PATH=/path/to/image.jpg] - Run inference (direct execution)"
+	@echo "  make inference-direct [IMAGE_PATH=/path/to/image.jpg] - Run inference with bicubic interpolation (direct execution)"
 	@echo "  make test-env-direct       - Test environment (direct execution)"
 	@echo "  make status-direct         - Check container environment status"
 	@echo ""
@@ -224,7 +224,8 @@ inference:
 		--backbone mobilenet \
 		--checkpoint $(CHECKPOINT_PATH) \
 		--image_path $(IMAGE_PATH) \
-		--output_directory ./results
+		--output_directory ./results \
+		--use_bicubic
 
 jupyter:
 	@echo "Starting Jupyter Lab..."

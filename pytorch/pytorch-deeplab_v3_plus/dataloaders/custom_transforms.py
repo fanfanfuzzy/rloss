@@ -3,6 +3,7 @@ import random
 import numpy as np
 
 from PIL import Image, ImageOps, ImageFilter
+from PIL.Image import Resampling
 
 class Normalize(object):
     """Normalize a tensor image with mean and standard deviation.
@@ -194,6 +195,28 @@ class FixScaleCropImage(object):
             ow = self.crop_size
             oh = int(1.0 * h * ow / w)
         img = img.resize((ow, oh), Image.BILINEAR)
+        # center crop
+        w, h = img.size
+        x1 = int(round((w - self.crop_size) / 2.))
+        y1 = int(round((h - self.crop_size) / 2.))
+        img = img.crop((x1, y1, x1 + self.crop_size, y1 + self.crop_size))
+        return img
+
+
+class FixScaleCropImageBicubic(object):
+    def __init__(self, crop_size, interpolation='bicubic'):
+        self.crop_size = crop_size
+        self.interpolation = Resampling.BICUBIC if interpolation == 'bicubic' else Resampling.BILINEAR
+
+    def __call__(self, img):
+        w, h = img.size
+        if w > h:
+            oh = self.crop_size
+            ow = int(1.0 * w * oh / h)
+        else:
+            ow = self.crop_size
+            oh = int(1.0 * h * ow / w)
+        img = img.resize((ow, oh), self.interpolation)
         # center crop
         w, h = img.size
         x1 = int(round((w - self.crop_size) / 2.))

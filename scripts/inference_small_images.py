@@ -176,7 +176,7 @@ def main():
 def process_single_image(model, image_path, args):
     """単一画像の処理"""
     composed_transforms = transforms.Compose([
-        tr.FixScaleCropImage(crop_size=args.crop_size),
+        tr.FixScaleCropImageBicubic(crop_size=args.crop_size, interpolation='bicubic'),
         tr.NormalizeImage(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
         tr.ToTensorImage()])
     

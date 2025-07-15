@@ -59,6 +59,9 @@ def main():
     # input image
     parser.add_argument('--image_path',type=str,default='./misc/test.png',
                         help='input image path')
+    
+    parser.add_argument('--use_bicubic', action='store_true',
+                        help='use bicubic interpolation for image resizing')
 
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -101,10 +104,16 @@ def main():
     
     model.eval()
     
-    composed_transforms = transforms.Compose([
-            tr.FixScaleCropImage(crop_size=args.crop_size),
-            tr.NormalizeImage(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-            tr.ToTensorImage()])
+    if args.use_bicubic:
+        composed_transforms = transforms.Compose([
+                tr.FixScaleCropImageBicubic(crop_size=args.crop_size, interpolation='bicubic'),
+                tr.NormalizeImage(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+                tr.ToTensorImage()])
+    else:
+        composed_transforms = transforms.Compose([
+                tr.FixScaleCropImage(crop_size=args.crop_size),
+                tr.NormalizeImage(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+                tr.ToTensorImage()])
     image = composed_transforms(Image.open(args.image_path).convert('RGB')).unsqueeze(0)
     image_cpu = image
     if not args.no_cuda and torch.cuda.is_available():
