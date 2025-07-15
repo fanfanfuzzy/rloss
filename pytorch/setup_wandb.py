@@ -35,9 +35,17 @@ def setup_wandb_credentials():
         
         os.environ['WANDB_API_KEY'] = api_key
         
-        print("✅ W&B API key set successfully!")
-        print("💡 To make this permanent, add to your shell profile:")
-        print(f"   export WANDB_API_KEY={api_key}")
+        env_file = '/workspace/.env'
+        try:
+            with open(env_file, 'a') as f:
+                f.write(f"\nexport WANDB_API_KEY={api_key}\n")
+            print("✅ W&B API key set successfully!")
+            print("✅ API key saved to /workspace/.env for persistence")
+            print("💡 To activate in current shell, run: source /workspace/.env")
+        except Exception as e:
+            print("✅ W&B API key set for current session!")
+            print("💡 To make this permanent, add to your shell profile:")
+            print(f"   export WANDB_API_KEY={api_key}")
         print()
         print("🚀 You can now run training with --use-wandb flag")
         return True
